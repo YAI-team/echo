@@ -1,7 +1,10 @@
 import type { EchoConfig, EchoRequest, EchoResponse } from './types'
 
 export function isEchoError(error: any): error is EchoError {
-	return error instanceof EchoError
+	return (
+		error instanceof EchoError ||
+		(typeof error === 'object' && error?.name === 'EchoError')
+	)
 }
 
 export class EchoError extends Error {

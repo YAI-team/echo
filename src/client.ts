@@ -1,16 +1,19 @@
 import { EchoError, isEchoError } from './error'
 import type {
 	EchoConfig,
+	EchoCreateConfig,
 	EchoRequest,
 	EchoRequestOptions,
 	EchoResponse
 } from './types'
-import { resolveBody, resolveParams, resolveURL } from './utils'
+import { resolveBody, resolveMerge, resolveParams, resolveURL } from './utils'
 
 export type EchoClientInstance = EchoClient
 
 export class EchoClient {
-	private configurator = (configure: EchoConfig) => {
+	constructor(private readonly createConfig: EchoCreateConfig = {}) {}
+
+	protected configurator = (configure: EchoConfig) => {
 		const { baseURL, url, params, body } = configure
 
 		const request: EchoRequest = {
@@ -31,37 +34,68 @@ export class EchoClient {
 		return { request, config }
 	}
 
-	private fetched = async <T>(
+	protected fetch = async <T>(
 		request: EchoRequest,
 		config: EchoConfig
 	): Promise<EchoResponse<T>> => {
+		const fetchResponse = await fetch(request.url, config)
+		const { ok, status, statusText, headers, json, text } = fetchResponse
+
+		const contentType = headers?.get('Content-Type')
+		const data = contentType?.includes('application/json')
+			? await json().catch(() => null)
+			: await text().catch(() => null)
+
+		const response: EchoResponse = {
+			data,
+			status,
+			statusText,
+			headers: Object.fromEntries(headers.entries()),
+			config
+		}
+
+		if (!ok) {
+			throw new EchoError(
+				data?.message || statusText || 'Unexpected error',
+				config,
+				request,
+				response
+			)
+		}
+
+		return response
+	}
+
+	protected methods = (
+		request: <T>(config: EchoConfig) => Promise<EchoResponse<T>>
+	) => ({
+		request,
+		get: <T>(url: string, options: EchoRequestOptions = {}) => {
+			request<T>({ method: 'GET', url, ...options })
+		},
+		post: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
+			request<T>({ method: 'POST', url, body, ...options })
+		},
+		put: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
+			request<T>({ method: 'PUT', url, body, ...options })
+		},
+		patch: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
+			request<T>({ method: 'PATCH', url, body, ...options })
+		},
+		delete: <T>(url: string, options: EchoRequestOptions = {}) => {
+			request<T>({ method: 'DELETE', url, ...options })
+		}
+	})
+
+	private clientSimple = <T>(
+		configure: EchoConfig
+	): Promise<EchoResponse<T>> => {
+		const { request, config } = this.configurator(
+			resolveMerge(this.createConfig, configure)
+		)
+
 		try {
-			const fetchResponse: Response = await fetch(request.url, config)
-			const { ok, status, statusText, headers, json, text } = fetchResponse
-
-			const contentType = headers?.get('Content-Type')
-			const data = contentType?.includes('application/json')
-				? await json().catch(() => null)
-				: await text().catch(() => null)
-
-			const response: EchoResponse = {
-				data,
-				status,
-				statusText,
-				headers: Object.fromEntries(headers.entries()),
-				config
-			}
-
-			if (!ok) {
-				throw new EchoError(
-					data?.message || statusText || 'Unexpected error',
-					config,
-					request,
-					response
-				)
-			}
-
-			return response
+			return this.fetch<T>(request, config)
 		} catch (err: any) {
 			if (isEchoError(err)) throw err
 
@@ -70,31 +104,10 @@ export class EchoClient {
 		}
 	}
 
-	protected client = <T>(configure: EchoConfig): Promise<EchoResponse<T>> => {
-		const { request, config } = this.configurator(configure)
-		return this.fetched<T>(request, config)
-	}
-
-	protected methods = (
-		request: <T>(config: EchoConfig) => Promise<EchoResponse<T>>
-	) => ({
-		request,
-		get: <T>(url: string, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'GET', url, ...options }),
-		post: <T>(url: string, body?: any, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'POST', url, body, ...options }),
-		put: <T>(url: string, body?: any, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'PUT', url, body, ...options }),
-		patch: <T>(url: string, body?: any, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'PATCH', url, body, ...options }),
-		delete: <T>(url: string, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'DELETE', url, ...options })
-	})
-
-	request = this.methods(this.client).request
-	get = this.methods(this.client).get
-	post = this.methods(this.client).post
-	put = this.methods(this.client).put
-	patch = this.methods(this.client).patch
-	delete = this.methods(this.client).delete
+	request = this.methods(this.clientSimple).request
+	get = this.methods(this.clientSimple).get
+	post = this.methods(this.clientSimple).post
+	put = this.methods(this.clientSimple).put
+	patch = this.methods(this.clientSimple).patch
+	delete = this.methods(this.clientSimple).delete
 }

@@ -12,11 +12,9 @@ import { resolveMerge } from './utils'
 export type EchoInstance = Echo
 
 export class Echo extends EchoClient {
-	createSimple(createConfig: EchoCreateConfig) {
-		const request = async <T>(config: EchoConfig): Promise<EchoResponse<T>> =>
-			this.client<T>(resolveMerge(createConfig, config))
-
-		return this.methods(request)
+	private client = <T>(configure: EchoConfig): Promise<EchoResponse<T>> => {
+		const { request, config } = this.configurator(configure)
+		return this.fetch<T>(request, config)
 	}
 
 	create(createConfig: EchoCreateConfig = {}) {
