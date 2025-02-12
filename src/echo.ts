@@ -118,6 +118,3 @@ export class Echo extends EchoClient {
 		}
 	}
 }
-
-const echo = new Echo()
-export default echo

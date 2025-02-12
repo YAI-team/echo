@@ -98,6 +98,3 @@ export class EchoClient {
 	patch = this.methods(this.client).patch
 	delete = this.methods(this.client).delete
 }
-
-const echoClient = new EchoClient()
-export default echoClient
