@@ -8,6 +8,8 @@ import type {
 } from './types'
 import { resolveBody, resolveMerge, resolveParams, resolveURL } from './utils'
 
+export type EchoClientInstance = Omit<EchoClient, 'createConfig'>
+
 export class EchoClient {
 	constructor(private readonly createConfig: EchoCreateConfig = {}) {}
 

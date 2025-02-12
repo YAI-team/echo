@@ -1,5 +1,6 @@
+import { EchoInstance } from 'src/echo'
+
 import { isEchoError } from '../../src/error'
-import type { EchoInstance } from '../../src/types'
 
 import { BEARER, getAccessToken } from './other'
 

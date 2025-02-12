@@ -5,9 +5,9 @@ import { API_URL, BEARER, REFRESH } from './other'
 
 const config: EchoCreateConfig = {
 	baseURL: API_URL,
-	// headers: {
-	// 	'Content-Type': 'application/json'
-	// },
+	headers: {
+		'Content-Type': 'application/json'
+	},
 	credentials: 'include'
 }
 
