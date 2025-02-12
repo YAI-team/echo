@@ -117,4 +117,141 @@ describe('Echo Interceptors', () => {
 		expect(response.status).toBe(200)
 		expect(response.data).toBe('Recovered from error')
 	})
+
+	test('Несколько перехватчиков request изменяют конфигурацию по порядку', async () => {
+		echo.interceptors.request.use('first', config => {
+			config.headers = { ...config.headers, 'X-First': 'first' }
+			return config
+		})
+		echo.interceptors.request.use('second', config => {
+			config.headers = { ...config.headers, 'X-Second': 'second' }
+			return config
+		})
+
+		fetchMock.mockResponseOnce(JSON.stringify({ message: 'OK' }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' }
+		})
+
+		await echo.get('/order')
+
+		expect(fetchMock).toHaveBeenCalledWith(
+			'https://api.example.com/order',
+			expect.objectContaining({
+				headers: expect.objectContaining({
+					'X-First': 'first',
+					'X-Second': 'second'
+				})
+			})
+		)
+	})
+
+	test('Несколько перехватчиков response изменяют ответ по порядку', async () => {
+		echo.interceptors.response.use('first', async response => {
+			// Добавляем свойство first
+			response.data.first = true
+			return response
+		})
+		echo.interceptors.response.use('second', async response => {
+			// Добавляем свойство second
+			response.data.second = true
+			return response
+		})
+
+		fetchMock.mockResponseOnce(JSON.stringify({ message: 'OK' }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' }
+		})
+
+		const response = await echo.get('/order')
+		expect(response.data).toEqual(
+			expect.objectContaining({ first: true, second: true })
+		)
+	})
+
+	test('Несколько перехватчиков ошибок request — цепочка прекращается после первого успешного восстановления', async () => {
+		let firstCalled = false
+		let secondCalled = false
+		let thirdCalled = false
+
+		echo.interceptors.request.use('firstError', null, async error => {
+			firstCalled = true
+			// Возвращаем исходную ошибку — не считается обработкой
+			return error
+		})
+		echo.interceptors.request.use('secondError', null, async error => {
+			secondCalled = true
+			// Возвращаем новый объект ответа — обработка успешна, можно прекращать цепочку
+			return { data: 'Recovered from second interceptor', status: 200 }
+		})
+		echo.interceptors.request.use('thirdError', null, async error => {
+			thirdCalled = true
+			return { data: 'Should not reach here', status: 200 }
+		})
+
+		fetchMock.mockRejectOnce(() => Promise.reject(new Error('Network Error')))
+
+		const response = await echo.get('/error')
+		expect(response.status).toBe(200)
+		expect(response.data).toBe('Recovered from second interceptor')
+		expect(firstCalled).toBe(true)
+		expect(secondCalled).toBe(true)
+		expect(thirdCalled).toBe(false)
+	})
+
+	test('Несколько перехватчиков ошибок response — цепочка прекращается после первого успешного восстановления', async () => {
+		let firstCalled = false
+		let secondCalled = false
+		let thirdCalled = false
+
+		echo.interceptors.response.use('firstError', null, async error => {
+			firstCalled = true
+			// Не обрабатываем ошибку
+			return error
+		})
+		echo.interceptors.response.use('secondError', null, async error => {
+			secondCalled = true
+			// Обрабатываем ошибку, возвращая новый ответ
+			return { data: 'Recovered from second response interceptor', status: 200 }
+		})
+		echo.interceptors.response.use('thirdError', null, async error => {
+			thirdCalled = true
+			return { data: 'Should not reach here', status: 200 }
+		})
+
+		fetchMock.mockRejectOnce(() =>
+			Promise.reject(new EchoError('Network Error'))
+		)
+
+		const response = await echo.get('/error')
+		expect(response.status).toBe(200)
+		expect(response.data).toBe('Recovered from second response interceptor')
+		expect(firstCalled).toBe(true)
+		expect(secondCalled).toBe(true)
+		expect(thirdCalled).toBe(false)
+	})
+
+	test('Ошибка остается необработанной, если ни один request-перехватчик не справился', async () => {
+		echo.interceptors.request.use('errorHandler', null, async error => {
+			// Возвращаем исходную ошибку, не обрабатывая её
+			return error
+		})
+
+		fetchMock.mockRejectOnce(() => Promise.reject(new Error('Unhandled Error')))
+
+		await expect(echo.get('/unhandled')).rejects.toThrow('Unhandled Error')
+	})
+
+	test('Ошибка остается необработанной, если ни один response-перехватчик не справился', async () => {
+		echo.interceptors.response.use('errorHandler', null, async error => {
+			// Возвращаем исходную ошибку, не обрабатывая её
+			return error
+		})
+
+		fetchMock.mockRejectOnce(() =>
+			Promise.reject(new EchoError('Unhandled EchoError'))
+		)
+
+		await expect(echo.get('/unhandled')).rejects.toThrow('Unhandled EchoError')
+	})
 })
