@@ -1,67 +1,125 @@
 import { EchoError, isEchoError } from './error'
 import type {
 	EchoConfig,
+	EchoCreateConfig,
 	EchoRequest,
 	EchoRequestOptions,
 	EchoResponse
 } from './types'
-import { resolveBody, resolveParams, resolveURL } from './utils'
-
-export type EchoClientInstance = EchoClient
+import { resolveBody, resolveMerge, resolveParams, resolveURL } from './utils'
 
 export class EchoClient {
-	private configurator = (configure: EchoConfig) => {
-		const { baseURL, url, params, body } = configure
+	constructor(private readonly createConfig: EchoCreateConfig = {}) {}
+
+	protected configurator = (configure: EchoConfig) => {
+		const { baseURL, url, params, body, ...config } = configure
 
 		const request: EchoRequest = {
-			...configure,
+			...config,
 			url: resolveURL(baseURL, url) + resolveParams(params),
-			headers: { ...configure.headers }
-		}
-
-		const extConfig: EchoConfig = { ...configure }
-
-		if (body instanceof FormData) {
-			delete extConfig.headers?.['Content-Type']
-		}
-		const config: EchoConfig = {
-			...extConfig,
 			body: resolveBody(body)
 		}
-		return { request, config }
+
+		if (body instanceof FormData) {
+			delete request.headers?.['Content-Type']
+		}
+
+		return { request }
 	}
 
-	private fetched = async <T>(
-		request: EchoRequest,
-		config: EchoConfig
+	private returnResponseData = async (req: EchoRequest, res: Response) => {
+		if (!req.responseType || !res.ok || req.responseType === 'original') {
+			const contentType = res.headers?.get('Content-Type') || ''
+
+			if (!req.responseType || req.responseType === 'original') {
+				if (contentType.includes('application/json')) {
+					return res.json().catch(() => null)
+				}
+				if (contentType.startsWith('text/')) {
+					return res.text().catch(() => null)
+				}
+				if (contentType.includes('application/octet-stream')) {
+					return res.arrayBuffer().catch(() => null)
+				}
+				return res.blob().catch(() => null)
+			}
+		} else {
+			switch (req.responseType) {
+				case 'json':
+					return res.json()
+				case 'text':
+					return res.text()
+				case 'arrayBuffer':
+					return res.arrayBuffer()
+				case 'blob':
+					return res.blob()
+				case 'bytes':
+					return res.bytes()
+				case 'formData':
+					return res.formData()
+				case 'stream':
+					return res.body
+				default:
+					throw new Error(`Unsupported responseType: ${req.responseType}`)
+			}
+		}
+	}
+
+	protected fetch = async <T>(
+		config: EchoConfig,
+		request: EchoRequest
 	): Promise<EchoResponse<T>> => {
+		const fetchResponse = await fetch(request.url, request)
+		const { ok, status, statusText, headers } = fetchResponse
+		const data = await this.returnResponseData(request, fetchResponse)
+
+		const response: EchoResponse = {
+			data,
+			status,
+			statusText,
+			headers: Object.fromEntries(headers.entries()),
+			config
+		}
+
+		if (!ok) {
+			throw new EchoError(
+				data?.message || statusText || 'Unexpected error',
+				config,
+				request,
+				response
+			)
+		}
+
+		return response
+	}
+
+	protected methods = (
+		request: <T>(config: EchoConfig) => Promise<EchoResponse<T>>
+	) => ({
+		get: <T>(url: string, options: EchoRequestOptions = {}) => {
+			return request<T>({ method: 'GET', url, ...options })
+		},
+		post: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
+			return request<T>({ method: 'POST', url, body, ...options })
+		},
+		put: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
+			return request<T>({ method: 'PUT', url, body, ...options })
+		},
+		patch: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
+			return request<T>({ method: 'PATCH', url, body, ...options })
+		},
+		delete: <T>(url: string, options: EchoRequestOptions = {}) => {
+			return request<T>({ method: 'DELETE', url, ...options })
+		}
+	})
+
+	request = <T>(config: EchoConfig): Promise<EchoResponse<T>> => {
+		const { request } = this.configurator(
+			resolveMerge(this.createConfig, config)
+		)
+
 		try {
-			const fetchResponse: Response = await fetch(request.url, config)
-			const { ok, status, statusText, headers, json, text } = fetchResponse
-
-			const contentType = headers?.get('Content-Type')
-			const data = contentType?.includes('application/json')
-				? await json().catch(() => null)
-				: await text().catch(() => null)
-
-			const response: EchoResponse = {
-				data,
-				status,
-				statusText,
-				headers: Object.fromEntries(headers.entries()),
-				config
-			}
-
-			if (!ok) {
-				throw new EchoError(
-					data?.message || statusText || 'Unexpected error',
-					config,
-					request,
-					response
-				)
-			}
-
-			return response
+			return this.fetch<T>(config, request)
 		} catch (err: any) {
 			if (isEchoError(err)) throw err
 
@@ -69,35 +127,9 @@ export class EchoClient {
 			throw new EchoError(errorMessage, config, request)
 		}
 	}
-
-	protected client = <T>(configure: EchoConfig): Promise<EchoResponse<T>> => {
-		const { request, config } = this.configurator(configure)
-		return this.fetched<T>(request, config)
-	}
-
-	protected methods = (
-		request: <T>(config: EchoConfig) => Promise<EchoResponse<T>>
-	) => ({
-		request,
-		get: <T>(url: string, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'GET', url, ...options }),
-		post: <T>(url: string, body?: any, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'POST', url, body, ...options }),
-		put: <T>(url: string, body?: any, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'PUT', url, body, ...options }),
-		patch: <T>(url: string, body?: any, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'PATCH', url, body, ...options }),
-		delete: <T>(url: string, options: EchoRequestOptions = {}) =>
-			request<T>({ method: 'DELETE', url, ...options })
-	})
-
-	request = this.methods(this.client).request
-	get = this.methods(this.client).get
-	post = this.methods(this.client).post
-	put = this.methods(this.client).put
-	patch = this.methods(this.client).patch
-	delete = this.methods(this.client).delete
+	get = this.methods(this.request).get
+	post = this.methods(this.request).post
+	put = this.methods(this.request).put
+	patch = this.methods(this.request).patch
+	delete = this.methods(this.request).delete
 }
-
-const echoClient = new EchoClient()
-export default echoClient

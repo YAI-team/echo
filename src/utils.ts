@@ -1,29 +1,47 @@
 import { EchoSearchParams } from './types'
 
+const isPlainObject = (item: unknown): item is Record<string, any> =>
+	item !== null &&
+	typeof item === 'object' &&
+	!(
+		item instanceof Date ||
+		item instanceof Map ||
+		item instanceof Set ||
+		item instanceof FormData ||
+		Array.isArray(item)
+	)
+
+// объединяет конфиги с полным копированием
 export const resolveMerge = (
 	target: Record<string, any>,
 	source: Record<string, any>
 ): any => {
-	const output = { ...target }
-	for (const key in source) {
-		if (Object.prototype.hasOwnProperty.call(source, key))
-			if (source[key] instanceof FormData) output[key] = source[key]
-			else if (
-				typeof source[key] === 'object' &&
-				source[key] !== null &&
-				!Array.isArray(source[key])
-			)
-				output[key] = resolveMerge(target[key] || {}, source[key])
-			else output[key] = source[key]
-	}
-	return output
+	return Object.entries(source).reduce(
+		(acc, [key, sourceValue]) => {
+			let newValue
+
+			if (sourceValue instanceof Date) newValue = new Date(sourceValue)
+			else if (sourceValue instanceof Map) newValue = new Map(sourceValue)
+			else if (sourceValue instanceof Set) newValue = new Set(sourceValue)
+			else if (Array.isArray(sourceValue)) newValue = [...sourceValue]
+			else if (isPlainObject(sourceValue)) {
+				const targetValue = isPlainObject(target[key]) ? target[key] : {}
+				newValue = resolveMerge(targetValue, sourceValue)
+			} else newValue = sourceValue
+
+			return { ...acc, [key]: newValue }
+		},
+		{ ...target }
+	)
 }
 
+// объединяет baseUrl и url
 export const resolveURL = (baseURL: string | undefined, url: string) => {
 	const finalURL = baseURL ? new URL(url, baseURL).href : url
 	return finalURL.split('?')[0]
 }
 
+// получаем params в string
 export const resolveParams = (params?: EchoSearchParams) => {
 	if (!params) return ''
 
@@ -49,6 +67,7 @@ export const resolveParams = (params?: EchoSearchParams) => {
 	return queryString ? `?${queryString}` : ''
 }
 
+// изменяем body от типа
 export const resolveBody = (body: any): BodyInit | undefined => {
 	if (!body) return
 	return body instanceof FormData || typeof body === 'string'
