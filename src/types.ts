@@ -48,7 +48,8 @@ export type EchoConfig = Omit<RequestInit, 'method' | 'headers' | 'body'> & {
 	baseURL?: string
 	params?: EchoSearchParams
 	headers?: Record<string, string>
-	body?: any
+	responseType?: EchoResponseType
+	data?: any
 }
 export type EchoCreateConfig = Omit<EchoConfig, 'url' | 'method'>
 

@@ -6,7 +6,7 @@ import type {
 	EchoRequestOptions,
 	EchoResponse
 } from './types'
-import { resolveBody, resolveMerge, resolveParams, resolveURL } from './utils'
+import { resolveData, resolveMerge, resolveParams, resolveURL } from './utils'
 
 export type EchoClientInstance = EchoClient
 
@@ -14,7 +14,7 @@ export class EchoClient {
 	constructor(private readonly createConfig: EchoCreateConfig = {}) {}
 
 	protected configurator = (configure: EchoConfig) => {
-		const { baseURL, url, params, body } = configure
+		const { baseURL, url, params, data } = configure
 
 		const request: EchoRequest = {
 			...configure,
@@ -24,12 +24,12 @@ export class EchoClient {
 
 		const extConfig: EchoConfig = { ...configure }
 
-		if (body instanceof FormData) {
+		if (data instanceof FormData) {
 			delete extConfig.headers?.['Content-Type']
 		}
 		const config: EchoConfig = {
 			...extConfig,
-			body: resolveBody(body)
+			data: resolveData(data)
 		}
 		return { request, config }
 	}
@@ -73,14 +73,14 @@ export class EchoClient {
 		get: <T>(url: string, options: EchoRequestOptions = {}) => {
 			request<T>({ method: 'GET', url, ...options })
 		},
-		post: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
-			request<T>({ method: 'POST', url, body, ...options })
+		post: <T>(url: string, data?: any, options: EchoRequestOptions = {}) => {
+			request<T>({ method: 'POST', url, data, ...options })
 		},
-		put: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
-			request<T>({ method: 'PUT', url, body, ...options })
+		put: <T>(url: string, data?: any, options: EchoRequestOptions = {}) => {
+			request<T>({ method: 'PUT', url, data, ...options })
 		},
-		patch: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
-			request<T>({ method: 'PATCH', url, body, ...options })
+		patch: <T>(url: string, data?: any, options: EchoRequestOptions = {}) => {
+			request<T>({ method: 'PATCH', url, data, ...options })
 		},
 		delete: <T>(url: string, options: EchoRequestOptions = {}) => {
 			request<T>({ method: 'DELETE', url, ...options })
