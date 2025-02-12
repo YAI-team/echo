@@ -36,9 +36,27 @@ export const resolveMerge = (
 }
 
 // объединяет baseUrl и url
-export const resolveURL = (baseURL: string | undefined, url: string) => {
-	const finalURL = baseURL ? new URL(url, baseURL).href : url
-	return finalURL.split('?')[0]
+export const resolveURL = (
+	baseURL: string | undefined,
+	url: string
+): string => {
+	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(url)) {
+		return url.split('?')[0]
+	}
+
+	if (!baseURL) return url.split('?')[0]
+
+	const urlWithoutSearch = url.split('?')[0]
+
+	const normalizedBaseURL = baseURL.endsWith('/')
+		? baseURL.slice(0, -1)
+		: baseURL
+
+	const normalizedURL = urlWithoutSearch.startsWith('/')
+		? urlWithoutSearch.slice(1)
+		: urlWithoutSearch
+
+	return `${normalizedBaseURL}/${normalizedURL}`
 }
 
 // получаем params в string
@@ -63,7 +81,7 @@ export const resolveParams = (params?: EchoSearchParams) => {
 		}
 	}
 
-	const queryString = searchParams.toString()
+	const queryString = searchParams.toString().replace(/\+/g, '%20')
 	return queryString ? `?${queryString}` : ''
 }
 

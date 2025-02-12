@@ -10,9 +10,9 @@ export function isEchoError(error: any): error is EchoError {
 export class EchoError extends Error {
 	constructor(
 		public message: string,
-		public config?: EchoConfig, // Не изменяемый
-		public request?: EchoRequest, // Изменяемый
-		public response?: EchoResponse // Изменяемый
+		public config: EchoConfig,
+		public request: EchoRequest,
+		public response?: EchoResponse
 	) {
 		super(message)
 		this.name = 'EchoError'

@@ -1,276 +1,279 @@
-import { EchoClient } from 'src/client'
-import { EchoError } from 'src/error'
-import { EchoConfig } from 'src/types'
+import fetchMock from 'jest-fetch-mock'
+import { EchoClient, EchoError, EchoResponse } from 'src/index'
 
-global.fetch = jest.fn((url, config) =>
-	Promise.resolve({
-		ok: true,
-		status: 200,
-		statusText: 'OK',
-		headers: new Headers({
-			...config.headers
-		}),
-		json: () => Promise.resolve({ message: 'Success' }),
-		text: () => Promise.resolve('Success')
-	})
-) as jest.Mock
+fetchMock.enableMocks()
 
 describe('EchoClient', () => {
 	let client: EchoClient
-	let config: Partial<EchoConfig>
 
 	beforeEach(() => {
-		client = new EchoClient()
-		config = {
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		}
+		client = new EchoClient({ baseURL: 'https://api.example.com' })
 	})
 
-	test('Инициализации', () => {
+	afterEach(() => {
+		fetchMock.resetMocks()
+	})
+
+	test('Инициализация клиента', () => {
 		expect(client).toBeDefined()
 	})
 
-	test('GET', async () => {
-		const response = await client.get('https://example.com')
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
-	})
-
-	test('POST', async () => {
-		const response = await client.post('https://example.com', { key: 'value' })
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
-	})
-
-	test('PUT', async () => {
-		const response = await client.put('https://example.com', { key: 'value' })
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
-	})
-
-	test('PATCH', async () => {
-		const response = await client.patch('https://example.com', { key: 'value' })
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
-	})
-
-	test('DELETE', async () => {
-		const response = await client.delete('https://example.com')
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
-	})
-
-	test('GET (Content-Type:application/json)', async () => {
-		const response = await client.get('https://example.com', config)
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual({ message: 'Success' })
-	})
-
-	test('POST (Content-Type:application/json)', async () => {
-		const response = await client.post(
-			'https://example.com',
-			{ key: 'value' },
-			config
-		)
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual({ message: 'Success' })
-	})
-
-	test('PUT (Content-Type:application/json)', async () => {
-		const response = await client.put(
-			'https://example.com',
-			{ key: 'value' },
-			config
-		)
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual({ message: 'Success' })
-	})
-
-	test('PATCH (Content-Type:application/json)', async () => {
-		const response = await client.patch(
-			'https://example.com',
-			{ key: 'value' },
-			config
-		)
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual({ message: 'Success' })
-	})
-
-	test('DELETE (Content-Type:application/json)', async () => {
-		const response = await client.delete('https://example.com', config)
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual({ message: 'Success' })
-	})
-
-	test('Ошибки', async () => {
-		;(global.fetch as jest.Mock).mockRejectedValueOnce(
-			new Error('Network Error')
-		)
-
-		try {
-			await client.get('https://example.com')
-		} catch (error) {
-			expect(error).toBeInstanceOf(EchoError)
-			expect((error as EchoError).message).toBe('Network Error')
-		}
-	})
-
-	test('Ошибка ответа', async () => {
-		;(global.fetch as jest.Mock).mockResolvedValueOnce({
-			ok: false,
-			status: 500,
-			statusText: 'Internal Server Error',
-			headers: new Headers(),
-			json: () => Promise.resolve({ message: 'Server Error' }),
-			text: () => Promise.resolve({ message: 'Server Error' })
-		})
-
-		try {
-			await client.get('https://example.com')
-		} catch (error) {
-			expect(error).toBeInstanceOf(EchoError)
-			expect((error as EchoError).message).toBe('Server Error')
-		}
-	})
-
-	test('Отправка FormData', async () => {
-		const formData = new FormData()
-		formData.append('file', new Blob(['test content']), 'test.txt')
-
-		const response = await client.post('https://example.com', formData)
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
-	})
-
-	test('Отправка FormData с нестандартными заголовками', async () => {
-		const formData = new FormData()
-		formData.append('file', new Blob(['test content']), 'test.txt')
-
-		const customConfig = {
-			headers: {
-				'X-Custom-Header': 'custom-value'
-			}
-		}
-
-		const response = await client.post(
-			'https://example.com',
-			formData,
-			customConfig
-		)
-
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
-	})
-
-	test('Пустой ответ', async () => {
-		;(global.fetch as jest.Mock).mockResolvedValueOnce({
-			ok: true,
+	test('GET запрос', async () => {
+		fetchMock.mockResponseOnce(JSON.stringify({ message: 'Success' }), {
 			status: 200,
-			statusText: 'OK',
-			headers: new Headers(),
-			json: () => Promise.resolve({}),
-			text: () => Promise.resolve('')
+			headers: { 'Content-Type': 'application/json' }
 		})
 
-		const response = await client.get('https://example.com')
+		const response: EchoResponse<{ message: string }> =
+			await client.get('/test')
 
 		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('')
+		expect(response.data).toEqual({ message: 'Success' })
+		expect(fetchMock).toHaveBeenCalledWith(
+			'https://api.example.com/test',
+			expect.any(Object)
+		)
 	})
 
-	test('Некорректный JSON-ответ', async () => {
-		;(global.fetch as jest.Mock).mockResolvedValueOnce({
-			ok: true,
+	test('GET с некорректными параметрами', async () => {
+		fetchMock.mockRejectOnce(() =>
+			Promise.reject(new Error('Invalid parameters'))
+		)
+		await expect(
+			client.get('/invalid-params', { params: { invalid: undefined } })
+		).rejects.toThrow('Invalid parameters')
+	})
+
+	test('GET с query-параметрами со спецсимволами', async () => {
+		fetchMock.mockResponseOnce(JSON.stringify({ message: 'Success' }), {
 			status: 200,
-			statusText: 'OK',
-			headers: new Headers(),
-			json: () => Promise.reject(new SyntaxError('Unexpected token')),
-			text: () => Promise.resolve(null)
+			headers: { 'Content-Type': 'application/json' }
 		})
 
-		const response = await client.get('https://example.com', config)
-
+		const response = await client.get('/search', {
+			params: { q: 'hello world', sort: 'desc' }
+		})
 		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toBeNull()
+		expect(response.data).toEqual({ message: 'Success' })
+		expect(fetchMock).toHaveBeenCalledWith(
+			'https://api.example.com/search?q=hello%20world&sort=desc',
+			expect.any(Object)
+		)
+	})
+
+	test('GET с null и undefined параметрами', async () => {
+		fetchMock.mockRejectOnce(() =>
+			Promise.reject(new Error('Invalid parameters'))
+		)
+		await expect(
+			client.get('/null-params', { params: { test: null, value: undefined } })
+		).rejects.toThrow('Invalid parameters')
 	})
 
 	test('GET с параметрами URL', async () => {
-		const response = await client.get('https://example.com', {
-			params: { search: 'test' }
+		fetchMock.mockResponseOnce(JSON.stringify({ result: 'OK' }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' }
+		})
+
+		const response = await client.get('/search', { params: { q: 'test' } })
+		expect(response.status).toBe(200)
+		expect(response.data).toEqual({ result: 'OK' })
+		expect(fetchMock).toHaveBeenCalledWith(
+			'https://api.example.com/search?q=test',
+			expect.any(Object)
+		)
+	})
+
+	test('GET без данных', async () => {
+		fetchMock.mockResponseOnce('', {
+			status: 204,
+			headers: { 'Content-Type': 'application/json' }
+		})
+
+		const response = await client.get('/no-content')
+		expect(response.status).toBe(204)
+		expect(response.data).toBeNull()
+	})
+
+	test('GET responseType text', async () => {
+		fetchMock.mockResponseOnce('Plain text response', {
+			status: 200,
+			headers: { 'Content-Type': 'text/plain' }
+		})
+
+		const response: EchoResponse<string> = await client.get('/text', {
+			responseType: 'text'
+		})
+		expect(response.data).toBe('Plain text response')
+	})
+
+	test('GET responseType arrayBuffer', async () => {
+		const buffer = new Uint8Array([1, 2, 3, 4]).buffer
+
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(
+				new Response(buffer, {
+					status: 200,
+					headers: { 'Content-Type': 'application/octet-stream' }
+				})
+			)
+		)
+
+		const response = await client.get('/binary', {
+			responseType: 'arrayBuffer'
 		})
 
 		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
-		expect(global.fetch).toHaveBeenCalledWith(
-			'https://example.com?search=test',
-			expect.any(Object)
-		)
+		expect(response.data).toBeInstanceOf(ArrayBuffer)
 	})
 
-	test('GET с параметрами внутри URL', async () => {
-		const response = await client.get('https://example.com?search=test')
+	test('GET responseType blob', async () => {
+		const blob = new Blob(['hello'], { type: 'text/plain' })
+
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(
+				new Response(blob, {
+					status: 200,
+					headers: { 'Content-Type': 'text/plain' }
+				})
+			)
+		)
+
+		const response = await client.get('/blob', { responseType: 'blob' })
 
 		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
-		expect(global.fetch).toHaveBeenCalledWith(
-			'https://example.com?search=test',
-			expect.any(Object)
-		)
+		expect(response.data?.constructor.name).toBe('Blob')
 	})
 
-	test('GET с параметрами внутри URL и в params', async () => {
-		const response = await client.get('https://example.com?existing=1', {
-			params: { search: 'test' }
+	test('POST запрос', async () => {
+		fetchMock.mockResponseOnce(JSON.stringify({ id: 1 }), {
+			status: 201,
+			headers: { 'Content-Type': 'application/json' }
 		})
-		expect(response.status).toBe(200)
-		expect(response.statusText).toBe('OK')
-		expect(response.data).toEqual('Success')
 
-		expect(global.fetch).toHaveBeenCalledWith(
-			'https://example.com?search=test',
-			expect.any(Object)
+		const response: EchoResponse<{ id: number }> = await client.post(
+			'/create',
+			{ name: 'Test' }
+		)
+
+		expect(response.status).toBe(201)
+		expect(response.data).toEqual({ id: 1 })
+		expect(fetchMock).toHaveBeenCalledWith(
+			'https://api.example.com/create',
+			expect.objectContaining({
+				method: 'POST',
+				body: JSON.stringify({ name: 'Test' })
+			})
 		)
 	})
 
-	test('Неправильный URL', async () => {
-		;(global.fetch as jest.Mock).mockRejectedValueOnce(
-			new Error('Network Error')
+	test('POST FormData', async () => {
+		const formData = new FormData()
+		formData.append('file', new Blob(['test content']), 'test.txt')
+
+		fetchMock.mockResponseOnce('Success', {
+			status: 200,
+			headers: { 'Content-Type': 'text/plain' }
+		})
+
+		const response: EchoResponse<string> = await client.post(
+			'/upload',
+			formData
+		)
+		expect(response.status).toBe(200)
+		expect(response.data).toBe('Success')
+	})
+
+	test('POST с нестандартными заголовками', async () => {
+		fetchMock.mockResponseOnce(JSON.stringify({ success: true }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' }
+		})
+
+		const response = await client.post(
+			'/custom-headers',
+			{ test: 123 },
+			{
+				headers: { 'X-Custom-Header': 'test-value' }
+			}
 		)
 
-		try {
-			await client.get('https://invalid-url')
-		} catch (error) {
-			expect(error).toBeInstanceOf(EchoError)
-			expect((error as EchoError).message).toBe('Network Error')
-		}
+		expect(response.status).toBe(200)
+		expect(response.data).toEqual({ success: true })
+		expect(fetchMock).toHaveBeenCalledWith(
+			'https://api.example.com/custom-headers',
+			expect.objectContaining({
+				headers: expect.objectContaining({ 'X-Custom-Header': 'test-value' })
+			})
+		)
+	})
+
+	test('PUT запрос', async () => {
+		fetchMock.mockResponseOnce(JSON.stringify({ updated: true }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' }
+		})
+
+		const response: EchoResponse<{ updated: boolean }> = await client.put(
+			'/update',
+			{ name: 'Test' }
+		)
+
+		expect(response.status).toBe(200)
+		expect(response.data).toEqual({ updated: true })
+	})
+
+	test('PATCH запрос', async () => {
+		fetchMock.mockResponseOnce(JSON.stringify({ patched: true }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' }
+		})
+
+		const response: EchoResponse<{ patched: boolean }> = await client.patch(
+			'/patch',
+			{ name: 'Test' }
+		)
+
+		expect(response.status).toBe(200)
+		expect(response.data).toEqual({ patched: true })
+	})
+
+	test('DELETE запрос', async () => {
+		fetchMock.mockResponseOnce('', { status: 204 })
+		const response = await client.delete('/delete')
+		expect(response.status).toBe(204)
+	})
+
+	test('Обработка ошибок сети', async () => {
+		const errorConfig: any = { method: 'GET', url: '/error' }
+		fetchMock.mockRejectOnce(() =>
+			Promise.reject(new EchoError('Network Error', errorConfig, errorConfig))
+		)
+		await expect(client.get('/error')).rejects.toThrow(EchoError)
+	})
+
+	test('Обработка ответа с ошибкой', async () => {
+		fetchMock.mockResponseOnce(JSON.stringify({ error: 'Not Found' }), {
+			status: 404,
+			statusText: 'Not Found',
+			headers: { 'Content-Type': 'application/json' }
+		})
+
+		await expect(client.get('/missing')).rejects.toThrow(EchoError)
+	})
+
+	test('Обработка тайм-аута', async () => {
+		const errorConfig: any = { method: 'GET', url: '/timeout' }
+		fetchMock.mockImplementation(
+			() =>
+				new Promise((_, reject) =>
+					setTimeout(
+						() => reject(new EchoError('Timeout', errorConfig, errorConfig)),
+						2000
+					)
+				)
+		)
+		await expect(client.get('/timeout')).rejects.toThrow('Timeout')
 	})
 })

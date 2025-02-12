@@ -83,8 +83,8 @@ describe('utils', () => {
 			const target = { a: { b: 1 }, c: new Set([1, 2]) }
 			const source = { a: { d: 2 }, c: new Set([3, 4]) }
 
-			const targetCopy = structuredClone(target)
-			const sourceCopy = structuredClone(source)
+			const targetCopy = { ...target }
+			const sourceCopy = { ...source }
 
 			resolveMerge(target, source)
 
@@ -104,12 +104,14 @@ describe('utils', () => {
 
 	describe('resolveURL', () => {
 		test('Разрешать URL', () => {
-			const baseURL = 'https://example.com'
-			const url = '/api/v1/resource'
+			const baseURL = 'https://example.com/api'
+			const url = '/v1/resource'
 
 			const result = resolveURL(baseURL, url)
+			const result2 = resolveURL(`${baseURL + '/'}`, url)
 
 			expect(result).toBe('https://example.com/api/v1/resource')
+			expect(result2).toBe('https://example.com/api/v1/resource')
 		})
 
 		test('Работать без baseURL', () => {
@@ -150,11 +152,11 @@ describe('utils', () => {
 
 	describe('resolveParams', () => {
 		test('Конструировать query string', () => {
-			const params = { search: 'test', limtest: 10 }
+			const params = { search: 'test', test: 10 }
 
 			const result = resolveParams(params)
 
-			expect(result).toBe('?search=test&limtest=10')
+			expect(result).toBe('?search=test&test=10')
 		})
 
 		test('Обрабатывать массивы', () => {

@@ -8,14 +8,19 @@ import type {
 } from './types'
 import { resolveBody, resolveMerge, resolveParams, resolveURL } from './utils'
 
+export type EchoClientInstance = Omit<EchoClient, 'createConfig'>
+
 export class EchoClient {
 	constructor(private readonly createConfig: EchoCreateConfig = {}) {}
 
-	protected configurator = (configure: EchoConfig) => {
-		const { baseURL, url, params, body, ...config } = configure
+	protected configurator = (config: EchoConfig) => {
+		const { baseURL, url, params, body, ...configure } = {
+			...config,
+			headers: { ...config.headers }
+		}
 
 		const request: EchoRequest = {
-			...config,
+			...configure,
 			url: resolveURL(baseURL, url) + resolveParams(params),
 			body: resolveBody(body)
 		}
@@ -24,7 +29,7 @@ export class EchoClient {
 			delete request.headers?.['Content-Type']
 		}
 
-		return { request }
+		return { request, config }
 	}
 
 	private returnResponseData = async (req: EchoRequest, res: Response) => {
@@ -41,7 +46,7 @@ export class EchoClient {
 				if (contentType.includes('application/octet-stream')) {
 					return res.arrayBuffer().catch(() => null)
 				}
-				return res.blob().catch(() => null)
+				return res.json().catch(() => null)
 			}
 		} else {
 			switch (req.responseType) {
@@ -78,7 +83,8 @@ export class EchoClient {
 			status,
 			statusText,
 			headers: Object.fromEntries(headers.entries()),
-			config
+			config,
+			request
 		}
 
 		if (!ok) {
@@ -113,9 +119,10 @@ export class EchoClient {
 		}
 	})
 
-	request = <T>(config: EchoConfig): Promise<EchoResponse<T>> => {
-		const { request } = this.configurator(
-			resolveMerge(this.createConfig, config)
+	request = <T>(configure: EchoConfig): Promise<EchoResponse<T>> => {
+		const { request, config } = this.configurator(
+			// resolveMerge делает глубокое клонирование
+			resolveMerge(this.createConfig, configure)
 		)
 
 		try {

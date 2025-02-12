@@ -1,6 +1,10 @@
 node_modules
-tests
+public
 src
-bun.lockb
+tests
+.git
 .prettierrc
+bun.lock
+bun.lockb
 tsconfig.json
+tsconfig.build.json
