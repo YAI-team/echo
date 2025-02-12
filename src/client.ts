@@ -14,23 +14,20 @@ export class EchoClient {
 	constructor(private readonly createConfig: EchoCreateConfig = {}) {}
 
 	protected configurator = (configure: EchoConfig) => {
-		const { baseURL, url, params, body } = configure
+		const { baseURL, url, params, body, headers } = configure
+
+		const config: EchoConfig = { ...configure, headers: { ...headers } }
 
 		const request: EchoRequest = {
 			...configure,
 			url: resolveURL(baseURL, url) + resolveParams(params),
-			headers: { ...configure.headers }
-		}
-
-		const extConfig: EchoConfig = { ...configure }
-
-		if (body instanceof FormData) {
-			delete extConfig.headers?.['Content-Type']
-		}
-		const config: EchoConfig = {
-			...extConfig,
 			body: resolveBody(body)
 		}
+
+		if (body instanceof FormData) {
+			delete request.headers?.['Content-Type']
+		}
+
 		return { request, config }
 	}
 
@@ -76,7 +73,7 @@ export class EchoClient {
 		request: EchoRequest,
 		config: EchoConfig
 	): Promise<EchoResponse<T>> => {
-		const fetchResponse = await fetch(request.url, config)
+		const fetchResponse = await fetch(request.url, request)
 		const { ok, status, statusText, headers } = fetchResponse
 		const data = await this.returnResponseData(request, fetchResponse)
 
