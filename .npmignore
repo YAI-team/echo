@@ -1,0 +1,6 @@
+node_modules
+tests
+src
+bun.lockb
+.prettierrc
+tsconfig.json
