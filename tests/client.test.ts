@@ -96,7 +96,7 @@ describe('EchoClient', () => {
 		expect(response.data).toBeNull()
 	})
 
-	test('GET text ответ', async () => {
+	test('GET responseType text', async () => {
 		fetchMock.mockResponseOnce('Plain text response', {
 			status: 200,
 			headers: { 'Content-Type': 'text/plain' }
@@ -106,6 +106,44 @@ describe('EchoClient', () => {
 			responseType: 'text'
 		})
 		expect(response.data).toBe('Plain text response')
+	})
+
+	test('GET responseType arrayBuffer', async () => {
+		const buffer = new Uint8Array([1, 2, 3, 4]).buffer
+
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(
+				new Response(buffer, {
+					status: 200,
+					headers: { 'Content-Type': 'application/octet-stream' }
+				})
+			)
+		)
+
+		const response = await client.get('/binary', {
+			responseType: 'arrayBuffer'
+		})
+
+		expect(response.status).toBe(200)
+		expect(response.data).toBeInstanceOf(ArrayBuffer)
+	})
+
+	test('GET responseType blob', async () => {
+		const blob = new Blob(['hello'], { type: 'text/plain' })
+
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(
+				new Response(blob, {
+					status: 200,
+					headers: { 'Content-Type': 'text/plain' }
+				})
+			)
+		)
+
+		const response = await client.get('/blob', { responseType: 'blob' })
+
+		expect(response.status).toBe(200)
+		expect(response.data?.constructor.name).toBe('Blob')
 	})
 
 	test('POST запрос', async () => {
