@@ -63,7 +63,7 @@ export const resolveParams = (params?: EchoSearchParams) => {
 		}
 	}
 
-	const queryString = searchParams.toString()
+	const queryString = searchParams.toString().replace(/\+/g, '%20')
 	return queryString ? `?${queryString}` : ''
 }
 

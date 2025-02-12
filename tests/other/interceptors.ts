@@ -26,15 +26,9 @@ export const setupEchoAuthInterceptors = (echoAuth: EchoInstance) => {
 			if (!originalRequest._isRetry && validRequest) {
 				originalRequest._isRetry = true
 				try {
-					// await tokenService.getNewTokens()
-					// authStore().LogIn()
 					await echoAuth.request(originalRequest)
 					return error
 				} catch (err) {
-					if (validRequest) {
-						// removeAccessToken()
-						// authStore().LogOut()
-					}
 					throw err
 				}
 			}

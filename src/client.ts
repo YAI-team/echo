@@ -41,7 +41,7 @@ export class EchoClient {
 				if (contentType.includes('application/octet-stream')) {
 					return res.arrayBuffer().catch(() => null)
 				}
-				return res.blob().catch(() => null)
+				return res.text().catch(() => null)
 			}
 		} else {
 			switch (req.responseType) {
