@@ -2,10 +2,10 @@ import { EchoClient } from './client'
 import {
 	type EchoConfig,
 	type EchoCreateConfig,
-	EchoEnumInterceptors,
-	type EchoHandlerInterceptors,
-	type EchoInterceptors,
-	type EchoResponse
+	EchoInterceptors,
+	EchoRequestInterceptors,
+	type EchoResponse,
+	EchoResponseInterceptors
 } from './types'
 import { resolveMerge } from './utils'
 
@@ -20,44 +20,22 @@ export class Echo extends EchoClient {
 	}
 
 	create(createConfig: EchoCreateConfig = {}) {
-		const interceptors: EchoInterceptors = {
-			request: new Map(),
-			response: new Map(),
-			error: new Map()
-		}
-
-		const addInterceptor = <T extends EchoEnumInterceptors>(
-			type: T,
-			id: number,
-			handler: EchoHandlerInterceptors<T>
-		) => {
-			const map = interceptors[type] as Map<number, EchoHandlerInterceptors<T>>
-			if (map.has(id))
-				throw new Error(
-					`Echo error: Interceptor ${type} with id ${id} already exists.`
-				)
-
-			map.set(id, handler)
-
-			const sortedEntries = new Map(
-				Array.from(interceptors.request.entries()).sort(([a], [b]) => a - b)
-			) as (typeof interceptors)[T]
-			interceptors[type] = sortedEntries
-		}
+		const requestInterceptors: EchoRequestInterceptors = new Map()
+		const responseInterceptors: EchoResponseInterceptors = new Map()
 
 		const runInterceptors = async <T>(
-			type: EchoEnumInterceptors,
+			type: EchoInterceptors,
 			input: T
 		): Promise<T> => {
-			if (type === 'error' && interceptors[type].size === 0) {
-				throw input
-			}
+			const interceptors =
+				type === 'request' ? requestInterceptors : responseInterceptors
 
-			for (const [_, handler] of interceptors[type]) {
+			for (const [_, handler] of interceptors) {
 				try {
-					input = await handler(input)
+					input = (await handler.onFulfilled(input as any)) as T
 				} catch (err) {
-					throw err
+					if (!handler.onRejected) throw err
+					input = await handler.onRejected(err)
 				}
 			}
 			return input
@@ -68,13 +46,8 @@ export class Echo extends EchoClient {
 				'request',
 				resolveMerge(createConfig, config)
 			)
-
-			try {
-				const response = await this.client<T>(interceptedRequest)
-				return await runInterceptors<EchoResponse<T>>('response', response)
-			} catch (err) {
-				return await runInterceptors<any>('error', err)
-			}
+			const response = await this.client<T>(interceptedRequest)
+			return await runInterceptors<EchoResponse<T>>('response', response)
 		}
 
 		return {
@@ -82,37 +55,31 @@ export class Echo extends EchoClient {
 			interceptors: {
 				request: {
 					use: (
-						order: number,
+						order: string,
 						onFulfilled?:
 							| ((value: EchoConfig) => EchoConfig | Promise<EchoConfig>)
-							| null
+							| null,
+						onRejected?: null | ((error: any) => any | null)
 					) => {
-						if (onFulfilled) addInterceptor('request', order, onFulfilled)
+						if (onFulfilled)
+							requestInterceptors.set(order, { onFulfilled, onRejected })
 					},
-					eject: (order: number) => interceptors.request.delete(order),
-					clear: () => {
-						interceptors.request.clear()
-					}
+					eject: (order: string) => requestInterceptors.delete(order),
+					clear: () => requestInterceptors.clear()
 				},
 				response: {
 					use: (
-						order: number,
+						order: string,
 						onFulfilled?:
-							| ((value: EchoResponse) => EchoResponse | Promise<EchoResponse>)
-							| null,
-						onRejected?: ((error: any) => any | null) | null
+							| null
+							| ((value: EchoResponse) => EchoResponse | Promise<EchoResponse>),
+						onRejected?: null | ((error: any) => any | null)
 					) => {
-						if (onFulfilled) addInterceptor('response', order, onFulfilled)
-						if (onRejected) addInterceptor('error', order, onRejected)
+						if (onFulfilled)
+							responseInterceptors.set(order, { onFulfilled, onRejected })
 					},
-					eject: (order: number) => {
-						interceptors.response.delete(order)
-						interceptors.error.delete(order)
-					},
-					clear: () => {
-						interceptors.response.clear()
-						interceptors.error.clear()
-					}
+					eject: (order: string) => responseInterceptors.delete(order),
+					clear: () => responseInterceptors.clear()
 				}
 			}
 		}

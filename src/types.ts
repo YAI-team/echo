@@ -2,16 +2,16 @@ export type ValueOf<T> = T[keyof T]
 
 // ----Enum
 
-export const EchoEnumMethod = {
+export const EchoMethod = {
 	GET: 'GET',
 	POST: 'POST',
 	PUT: 'PUT',
 	PATCH: 'PATCH',
 	DELETE: 'DELETE'
 } as const
-export type EchoEnumMethod = ValueOf<typeof EchoEnumMethod>
+export type EchoMethod = ValueOf<typeof EchoMethod>
 
-export const EchoEnumResponseType = {
+export const EchoResponseType = {
 	JSON: 'json',
 	TEXT: 'text',
 	STREAM: 'stream',
@@ -20,14 +20,13 @@ export const EchoEnumResponseType = {
 	BLOB: 'blob',
 	ORIGINAL: 'original'
 } as const
-export type EchoEnumResponseType = ValueOf<typeof EchoEnumResponseType>
+export type EchoResponseType = ValueOf<typeof EchoResponseType>
 
-export const EchoEnumInterceptors = {
+export const EchoInterceptors = {
 	REQUEST: 'request',
-	RESPONSE: 'response',
-	ERROR: 'error'
+	RESPONSE: 'response'
 } as const
-export type EchoEnumInterceptors = ValueOf<typeof EchoEnumInterceptors>
+export type EchoInterceptors = ValueOf<typeof EchoInterceptors>
 
 // ----Const
 
@@ -44,7 +43,7 @@ export type EchoSearchParams = {
 // ----Config
 
 export type EchoConfig = Omit<RequestInit, 'method' | 'headers' | 'body'> & {
-	method: EchoEnumMethod
+	method: EchoMethod
 	url: string
 	baseURL?: string
 	params?: EchoSearchParams
@@ -70,15 +69,12 @@ export type EchoResponse<T = any> = {
 
 // ----Interceptors
 
-type InterceptorMap<T> = Map<number, (value: T) => T | Promise<T>>
-
-export type EchoInterceptors = {
-	request: InterceptorMap<EchoConfig>
-	response: InterceptorMap<EchoResponse>
-	error: InterceptorMap<any>
+type Interceptor<T> = {
+	onFulfilled: (value: T) => T | Promise<T>
+	onRejected?: null | ((error: any) => any)
 }
 
-export type EchoHandlerInterceptors<T extends keyof EchoInterceptors> =
-	EchoInterceptors[T] extends InterceptorMap<infer H>
-		? (value: H) => H | Promise<H>
-		: never
+type InterceptorMap<T> = Map<string, Interceptor<T>>
+
+export type EchoRequestInterceptors = InterceptorMap<EchoConfig>
+export type EchoResponseInterceptors = InterceptorMap<EchoResponse>
