@@ -14,10 +14,11 @@ export type EchoMethod = ValueOf<typeof EchoMethod>
 export const EchoResponseType = {
 	JSON: 'json',
 	TEXT: 'text',
-	STREAM: 'stream',
-	DOCUMENT: 'document',
-	ARRAY_BUFFER: 'arraybuffer',
+	ARRAY_BUFFER: 'arrayBuffer',
 	BLOB: 'blob',
+	BYTES: 'bytes',
+	FORM_DATA: 'formData',
+	STREAM: 'stream',
 	ORIGINAL: 'original'
 } as const
 export type EchoResponseType = ValueOf<typeof EchoResponseType>

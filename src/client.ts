@@ -34,17 +34,51 @@ export class EchoClient {
 		return { request, config }
 	}
 
+	private returnResponseData = async (req: EchoRequest, res: Response) => {
+		if (!req.responseType || !res.ok || req.responseType === 'original') {
+			const contentType = res.headers?.get('Content-Type') || ''
+
+			if (!req.responseType || req.responseType === 'original') {
+				if (contentType.includes('application/json')) {
+					return res.json().catch(() => null)
+				}
+				if (contentType.startsWith('text/')) {
+					return res.text().catch(() => null)
+				}
+				if (contentType.includes('application/octet-stream')) {
+					return res.arrayBuffer().catch(() => null)
+				}
+				return res.blob().catch(() => null)
+			}
+		} else {
+			switch (req.responseType) {
+				case 'json':
+					return res.json()
+				case 'text':
+					return res.text()
+				case 'arrayBuffer':
+					return res.arrayBuffer()
+				case 'blob':
+					return res.blob()
+				case 'bytes':
+					return res.bytes()
+				case 'formData':
+					return res.formData()
+				case 'stream':
+					return res.body
+				default:
+					throw new Error(`Unsupported responseType: ${req.responseType}`)
+			}
+		}
+	}
+
 	protected fetch = async <T>(
 		request: EchoRequest,
 		config: EchoConfig
 	): Promise<EchoResponse<T>> => {
 		const fetchResponse = await fetch(request.url, config)
-		const { ok, status, statusText, headers, json, text } = fetchResponse
-
-		const contentType = headers?.get('Content-Type')
-		const data = contentType?.includes('application/json')
-			? await json().catch(() => null)
-			: await text().catch(() => null)
+		const { ok, status, statusText, headers } = fetchResponse
+		const data = await this.returnResponseData(request, fetchResponse)
 
 		const response: EchoResponse = {
 			data,
@@ -71,19 +105,19 @@ export class EchoClient {
 	) => ({
 		request,
 		get: <T>(url: string, options: EchoRequestOptions = {}) => {
-			request<T>({ method: 'GET', url, ...options })
+			return request<T>({ method: 'GET', url, ...options })
 		},
 		post: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
-			request<T>({ method: 'POST', url, body, ...options })
+			return request<T>({ method: 'POST', url, body, ...options })
 		},
 		put: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
-			request<T>({ method: 'PUT', url, body, ...options })
+			return request<T>({ method: 'PUT', url, body, ...options })
 		},
 		patch: <T>(url: string, body?: any, options: EchoRequestOptions = {}) => {
-			request<T>({ method: 'PATCH', url, body, ...options })
+			return request<T>({ method: 'PATCH', url, body, ...options })
 		},
 		delete: <T>(url: string, options: EchoRequestOptions = {}) => {
-			request<T>({ method: 'DELETE', url, ...options })
+			return request<T>({ method: 'DELETE', url, ...options })
 		}
 	})
 
