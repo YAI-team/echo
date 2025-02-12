@@ -83,8 +83,8 @@ describe('utils', () => {
 			const target = { a: { b: 1 }, c: new Set([1, 2]) }
 			const source = { a: { d: 2 }, c: new Set([3, 4]) }
 
-			const targetCopy = structuredClone(target)
-			const sourceCopy = structuredClone(source)
+			const targetCopy = { ...target }
+			const sourceCopy = { ...source }
 
 			resolveMerge(target, source)
 
@@ -150,11 +150,11 @@ describe('utils', () => {
 
 	describe('resolveParams', () => {
 		test('Конструировать query string', () => {
-			const params = { search: 'test', limtest: 10 }
+			const params = { search: 'test', test: 10 }
 
 			const result = resolveParams(params)
 
-			expect(result).toBe('?search=test&limtest=10')
+			expect(result).toBe('?search=test&test=10')
 		})
 
 		test('Обрабатывать массивы', () => {
