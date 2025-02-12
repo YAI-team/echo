@@ -1,6 +1,8 @@
 node_modules
 tests
 src
-bun.lockb
+.git
 .prettierrc
+bun.lock
+bun.lockb
 tsconfig.json
