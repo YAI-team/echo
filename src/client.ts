@@ -43,7 +43,7 @@ export class EchoClient {
 				if (contentType.includes('application/octet-stream')) {
 					return res.arrayBuffer().catch(() => null)
 				}
-				return res.text().catch(() => null)
+				return res.json().catch(() => null)
 			}
 		} else {
 			switch (req.responseType) {
@@ -80,7 +80,8 @@ export class EchoClient {
 			status,
 			statusText,
 			headers: Object.fromEntries(headers.entries()),
-			config
+			config,
+			request
 		}
 
 		if (!ok) {

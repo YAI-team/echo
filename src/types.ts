@@ -67,6 +67,7 @@ export type EchoResponse<T = any> = {
 	statusText: string
 	headers: Record<string, string>
 	config: EchoConfig
+	request: EchoRequest
 }
 
 // ----Interceptors

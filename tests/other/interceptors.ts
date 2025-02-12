@@ -18,7 +18,7 @@ export const setupEchoAuthInterceptors = (echoAuth: EchoInstance) => {
 
 	echoAuth.interceptors.response.use('auth', null, async error => {
 		if (isEchoError(error)) {
-			const originalRequest: any = error.config
+			const originalRequest: any = error.request
 			const validRequest =
 				error.response?.status === 401 &&
 				(error.message === 'jwt expired' ||
