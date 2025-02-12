@@ -14,12 +14,10 @@ export class EchoClient {
 	constructor(private readonly createConfig: EchoCreateConfig = {}) {}
 
 	protected configurator = (configure: EchoConfig) => {
-		const { baseURL, url, params, body, headers } = configure
-
-		const config: EchoConfig = { ...configure, headers: { ...headers } }
+		const { baseURL, url, params, body, ...config } = configure
 
 		const request: EchoRequest = {
-			...configure,
+			...config,
 			url: resolveURL(baseURL, url) + resolveParams(params),
 			body: resolveBody(body)
 		}
@@ -28,7 +26,7 @@ export class EchoClient {
 			delete request.headers?.['Content-Type']
 		}
 
-		return { request, config }
+		return { request }
 	}
 
 	private returnResponseData = async (req: EchoRequest, res: Response) => {
@@ -70,8 +68,8 @@ export class EchoClient {
 	}
 
 	protected fetch = async <T>(
-		request: EchoRequest,
-		config: EchoConfig
+		config: EchoConfig,
+		request: EchoRequest
 	): Promise<EchoResponse<T>> => {
 		const fetchResponse = await fetch(request.url, request)
 		const { ok, status, statusText, headers } = fetchResponse
@@ -100,7 +98,6 @@ export class EchoClient {
 	protected methods = (
 		request: <T>(config: EchoConfig) => Promise<EchoResponse<T>>
 	) => ({
-		request,
 		get: <T>(url: string, options: EchoRequestOptions = {}) => {
 			return request<T>({ method: 'GET', url, ...options })
 		},
@@ -118,15 +115,13 @@ export class EchoClient {
 		}
 	})
 
-	private clientSimple = <T>(
-		configure: EchoConfig
-	): Promise<EchoResponse<T>> => {
-		const { request, config } = this.configurator(
-			resolveMerge(this.createConfig, configure)
+	request = <T>(config: EchoConfig): Promise<EchoResponse<T>> => {
+		const { request } = this.configurator(
+			resolveMerge(this.createConfig, config)
 		)
 
 		try {
-			return this.fetch<T>(request, config)
+			return this.fetch<T>(config, request)
 		} catch (err: any) {
 			if (isEchoError(err)) throw err
 
@@ -134,11 +129,9 @@ export class EchoClient {
 			throw new EchoError(errorMessage, config, request)
 		}
 	}
-
-	request = this.methods(this.clientSimple).request
-	get = this.methods(this.clientSimple).get
-	post = this.methods(this.clientSimple).post
-	put = this.methods(this.clientSimple).put
-	patch = this.methods(this.clientSimple).patch
-	delete = this.methods(this.clientSimple).delete
+	get = this.methods(this.request).get
+	post = this.methods(this.request).post
+	put = this.methods(this.request).put
+	patch = this.methods(this.request).patch
+	delete = this.methods(this.request).delete
 }

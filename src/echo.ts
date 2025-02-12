@@ -12,11 +12,6 @@ import { resolveMerge } from './utils'
 export type EchoInstance = Echo
 
 export class Echo extends EchoClient {
-	private client = <T>(configure: EchoConfig): Promise<EchoResponse<T>> => {
-		const { request, config } = this.configurator(configure)
-		return this.fetch<T>(request, config)
-	}
-
 	create(createConfig: EchoCreateConfig = {}) {
 		const requestInterceptors: EchoRequestInterceptors = new Map()
 		const responseInterceptors: EchoResponseInterceptors = new Map()
@@ -44,11 +39,13 @@ export class Echo extends EchoClient {
 				'request',
 				resolveMerge(createConfig, config)
 			)
-			const response = await this.client<T>(interceptedRequest)
+			const { request } = this.configurator(interceptedRequest)
+			const response = await this.fetch<T>(config, request)
 			return await runInterceptors<EchoResponse<T>>('response', response)
 		}
 
 		return {
+			request,
 			...this.methods(request),
 			interceptors: {
 				request: {

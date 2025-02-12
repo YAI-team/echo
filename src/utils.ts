@@ -1,20 +1,34 @@
 import { EchoSearchParams } from './types'
 
+const isObject = (item: any): item is Record<string, any> =>
+	item !== null &&
+	typeof item === 'object' &&
+	!Array.isArray(item) &&
+	!(item instanceof FormData) &&
+	!(item instanceof Date) &&
+	!(item instanceof Map) &&
+	!(item instanceof Set)
+
 export const resolveMerge = (
 	target: Record<string, any>,
 	source: Record<string, any>
 ): any => {
-	const output = { ...target }
-	for (const key in source) {
-		if (Object.prototype.hasOwnProperty.call(source, key))
-			if (source[key] instanceof FormData) output[key] = source[key]
-			else if (
-				typeof source[key] === 'object' &&
-				source[key] !== null &&
-				!Array.isArray(source[key])
-			)
-				output[key] = resolveMerge(target[key] || {}, source[key])
-			else output[key] = source[key]
+	const output = structuredClone(target)
+	const clonedSource = structuredClone(source)
+
+	for (const key in clonedSource) {
+		if (!Object.prototype.hasOwnProperty.call(clonedSource, key)) continue
+
+		const sourceValue = clonedSource[key]
+
+		if (sourceValue instanceof FormData) output[key] = sourceValue
+		else if (sourceValue instanceof Date) output[key] = new Date(sourceValue)
+		else if (sourceValue instanceof Map) output[key] = new Map(sourceValue)
+		else if (sourceValue instanceof Set) output[key] = new Set(sourceValue)
+		else if (isObject(sourceValue)) {
+			const targetValue = isObject(output[key]) ? output[key] : {}
+			output[key] = resolveMerge(targetValue, sourceValue)
+		} else output[key] = sourceValue
 	}
 	return output
 }
