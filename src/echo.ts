@@ -55,30 +55,30 @@ export class Echo extends EchoClient {
 			interceptors: {
 				request: {
 					use: (
-						order: string,
+						key: string,
 						onFulfilled?:
 							| ((value: EchoConfig) => EchoConfig | Promise<EchoConfig>)
 							| null,
 						onRejected?: null | ((error: any) => any | null)
 					) => {
 						if (onFulfilled)
-							requestInterceptors.set(order, { onFulfilled, onRejected })
+							requestInterceptors.set(key, { onFulfilled, onRejected })
 					},
-					eject: (order: string) => requestInterceptors.delete(order),
+					eject: (key: string) => requestInterceptors.delete(key),
 					clear: () => requestInterceptors.clear()
 				},
 				response: {
 					use: (
-						order: string,
+						key: string,
 						onFulfilled?:
 							| null
 							| ((value: EchoResponse) => EchoResponse | Promise<EchoResponse>),
 						onRejected?: null | ((error: any) => any | null)
 					) => {
 						if (onFulfilled)
-							responseInterceptors.set(order, { onFulfilled, onRejected })
+							responseInterceptors.set(key, { onFulfilled, onRejected })
 					},
-					eject: (order: string) => responseInterceptors.delete(order),
+					eject: (key: string) => responseInterceptors.delete(key),
 					clear: () => responseInterceptors.clear()
 				}
 			}
