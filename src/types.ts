@@ -80,3 +80,58 @@ type InterceptorMap<T> = Map<string, Interceptor<T>>
 
 export type EchoRequestInterceptors = InterceptorMap<EchoConfig>
 export type EchoResponseInterceptors = InterceptorMap<EchoResponse>
+
+// ----Instance
+
+export type EchoClientInstance = {
+	request: <T>(config: EchoConfig) => Promise<EchoResponse<T>>
+	get: <T>(url: string, options?: EchoCreateConfig) => Promise<EchoResponse<T>>
+	post: <T>(
+		url: string,
+		body?: any,
+		options?: EchoCreateConfig
+	) => Promise<EchoResponse<T>>
+	put: <T>(
+		url: string,
+		body?: any,
+		options?: EchoCreateConfig
+	) => Promise<EchoResponse<T>>
+	patch: <T>(
+		url: string,
+		body?: any,
+		options?: EchoCreateConfig
+	) => Promise<EchoResponse<T>>
+	delete: <T>(
+		url: string,
+		options?: EchoCreateConfig
+	) => Promise<EchoResponse<T>>
+}
+
+export type EchoInstance = EchoClientInstance & {
+	interceptors: {
+		request: {
+			use: (
+				key: string,
+				onFulfilled?:
+					| ((value: EchoConfig) => EchoConfig | Promise<EchoConfig>)
+					| null
+					| undefined,
+				onRejected?: ((error: any) => any) | null | undefined
+			) => void
+			eject: (key: string) => boolean
+			clear: () => void
+		}
+		response: {
+			use: (
+				key: string,
+				onFulfilled?:
+					| ((value: EchoResponse) => EchoResponse | Promise<EchoResponse>)
+					| null
+					| undefined,
+				onRejected?: ((error: any) => any) | null | undefined
+			) => void
+			eject: (key: string) => boolean
+			clear: () => void
+		}
+	}
+}
