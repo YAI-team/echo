@@ -1,4 +1,5 @@
 import { EchoClient } from './client'
+import { isEchoError } from './error'
 import {
 	type EchoConfig,
 	type EchoCreateConfig,
@@ -16,32 +17,65 @@ export class Echo extends EchoClient {
 		const requestInterceptors: EchoRequestInterceptors = new Map()
 		const responseInterceptors: EchoResponseInterceptors = new Map()
 
-		const runInterceptors = async <T>(
+		const runFulfilled = async <T>(
 			type: EchoInterceptors,
 			input: T
 		): Promise<T> => {
 			const interceptors =
 				type === 'request' ? requestInterceptors : responseInterceptors
 
-			for (const [_, handler] of interceptors) {
+			for (const [_, { onFulfilled }] of interceptors) {
+				if (!onFulfilled) continue
 				try {
-					input = (await handler.onFulfilled(input as any)) as T
+					input = (await onFulfilled(input as any)) as T
 				} catch (err) {
-					if (!handler.onRejected) throw err
-					input = await handler.onRejected(err)
+					throw err
 				}
 			}
 			return input
 		}
 
+		const runRejected = async (
+			type: EchoInterceptors,
+			input: any
+		): Promise<any> => {
+			const interceptors =
+				type === 'request' ? requestInterceptors : responseInterceptors
+
+			let isHandled = false
+
+			for (const [_, { onRejected }] of interceptors) {
+				if (!onRejected) continue
+				try {
+					const result = await onRejected(input)
+					if (result === input) continue
+
+					input = result
+					isHandled = true
+				} catch (err) {
+					throw err
+				}
+			}
+			if (isHandled) return input
+			throw input
+		}
+
 		const request = async <T>(config: EchoConfig): Promise<EchoResponse<T>> => {
-			const interceptedRequest = await runInterceptors<EchoConfig>(
-				'request',
-				resolveMerge(createConfig, config)
-			)
-			const { request } = this.configurator(interceptedRequest)
-			const response = await this.fetch<T>(config, request)
-			return await runInterceptors<EchoResponse<T>>('response', response)
+			try {
+				const interceptedRequest = await runFulfilled<EchoConfig>(
+					'request',
+					resolveMerge(createConfig, config)
+				)
+
+				const { request } = this.configurator(interceptedRequest)
+				const response = await this.fetch<T>(config, request)
+
+				return await runFulfilled<EchoResponse<T>>('response', response)
+			} catch (error) {
+				if (!isEchoError(error)) return await runRejected('request', error)
+
+				return await runRejected('response', error)
+			}
 		}
 
 		return {
@@ -56,8 +90,7 @@ export class Echo extends EchoClient {
 							| null,
 						onRejected?: null | ((error: any) => any)
 					) => {
-						if (onFulfilled)
-							requestInterceptors.set(key, { onFulfilled, onRejected })
+						requestInterceptors.set(key, { onFulfilled, onRejected })
 					},
 					eject: (key: string) => requestInterceptors.delete(key),
 					clear: () => requestInterceptors.clear()
@@ -70,8 +103,7 @@ export class Echo extends EchoClient {
 							| ((value: EchoResponse) => EchoResponse | Promise<EchoResponse>),
 						onRejected?: null | ((error: any) => any)
 					) => {
-						if (onFulfilled)
-							responseInterceptors.set(key, { onFulfilled, onRejected })
+						responseInterceptors.set(key, { onFulfilled, onRejected })
 					},
 					eject: (key: string) => responseInterceptors.delete(key),
 					clear: () => responseInterceptors.clear()

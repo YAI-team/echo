@@ -72,7 +72,7 @@ export type EchoResponse<T = any> = {
 // ----Interceptors
 
 type Interceptor<T> = {
-	onFulfilled: (value: T) => T | Promise<T>
+	onFulfilled?: null | ((value: T) => T | Promise<T>)
 	onRejected?: null | ((error: any) => any)
 }
 

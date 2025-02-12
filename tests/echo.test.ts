@@ -1,6 +1,6 @@
 import fetchMock from 'jest-fetch-mock'
-import { EchoError } from 'src'
 import { Echo, EchoInstance } from 'src/echo'
+import { EchoError } from 'src/index'
 
 fetchMock.enableMocks()
 
@@ -9,11 +9,14 @@ describe('Echo Interceptors', () => {
 
 	beforeEach(() => {
 		echo = new Echo().create({ baseURL: 'https://api.example.com' })
+	})
+
+	afterEach(() => {
 		fetchMock.resetMocks()
 	})
 
-	test('Добавление и вызов перехватчика запроса', async () => {
-		echo.interceptors.request.use('auth', config => {
+	test('Добавление и вызов перехватчика request', async () => {
+		echo.interceptors.request.use('addRequest', config => {
 			config.headers = { ...config.headers, Authorization: 'Bearer token' }
 			return config
 		})
@@ -34,8 +37,8 @@ describe('Echo Interceptors', () => {
 		)
 	})
 
-	test('Удаление перехватчика запроса', async () => {
-		const interceptorKey = 'auth'
+	test('Удаление перехватчика request', async () => {
+		const interceptorKey = 'deleteRequest'
 		echo.interceptors.request.use(interceptorKey, config => {
 			config.headers = { ...config.headers, Authorization: 'Bearer token' }
 			return config
@@ -57,8 +60,23 @@ describe('Echo Interceptors', () => {
 		)
 	})
 
-	test('Добавление и вызов перехватчика ответа', async () => {
-		echo.interceptors.response.use('modifyResponse', async response => {
+	test('Перехватчик request при ошибке', async () => {
+		echo.interceptors.request.use('errorRequest', null, async error => {
+			console.log(error)
+			return { data: 'Recovered from error', status: 200 }
+		})
+
+		fetchMock.mockRejectOnce(() =>
+			Promise.reject(new EchoError('Network Error'))
+		)
+
+		const response = await echo.get('/error')
+		expect(response.status).toBe(200)
+		expect(response.data).toBe('Recovered from error')
+	})
+
+	test('Добавление и вызов перехватчика response', async () => {
+		echo.interceptors.response.use('addResponse', async response => {
 			return { ...response, data: { modified: true } }
 		})
 
@@ -72,8 +90,26 @@ describe('Echo Interceptors', () => {
 		expect(response.data).toEqual({ modified: true })
 	})
 
-	test('Перехватчик ответа при ошибке', async () => {
-		echo.interceptors.response.use('handleError', null, async error => {
+	test('Удаление перехватчика response', async () => {
+		const interceptorKey = 'deleteResponse'
+		echo.interceptors.response.use('deleteResponse', async response => {
+			return { ...response, data: { modified: true } }
+		})
+		echo.interceptors.response.eject(interceptorKey)
+
+		fetchMock.mockResponseOnce(JSON.stringify({ message: 'Success' }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' }
+		})
+
+		const response = await echo.get('/test')
+		expect(response.status).toBe(200)
+		expect(response.data).not.toEqual({ modified: true })
+	})
+
+	test('Перехватчик response при ошибке', async () => {
+		echo.interceptors.response.use('errorResponse', null, async error => {
+			console.log(error)
 			return { data: 'Recovered from error', status: 200 }
 		})
 
