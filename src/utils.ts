@@ -49,7 +49,7 @@ export const resolveParams = (params?: EchoSearchParams) => {
 	return queryString ? `?${queryString}` : ''
 }
 
-export const resolveData = (body: any): BodyInit | undefined => {
+export const resolveBody = (body: any): BodyInit | undefined => {
 	if (!body) return
 	return body instanceof FormData || typeof body === 'string'
 		? body
