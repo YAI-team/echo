@@ -54,7 +54,7 @@ export class Echo extends EchoClient {
 						onFulfilled?:
 							| ((value: EchoConfig) => EchoConfig | Promise<EchoConfig>)
 							| null,
-						onRejected?: null | ((error: any) => any | null)
+						onRejected?: null | ((error: any) => any)
 					) => {
 						if (onFulfilled)
 							requestInterceptors.set(key, { onFulfilled, onRejected })
@@ -68,7 +68,7 @@ export class Echo extends EchoClient {
 						onFulfilled?:
 							| null
 							| ((value: EchoResponse) => EchoResponse | Promise<EchoResponse>),
-						onRejected?: null | ((error: any) => any | null)
+						onRejected?: null | ((error: any) => any)
 					) => {
 						if (onFulfilled)
 							responseInterceptors.set(key, { onFulfilled, onRejected })

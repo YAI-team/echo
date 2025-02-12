@@ -1,43 +1,47 @@
 import { EchoSearchParams } from './types'
 
-const isObject = (item: any): item is Record<string, any> =>
+const isPlainObject = (item: unknown): item is Record<string, any> =>
 	item !== null &&
 	typeof item === 'object' &&
-	!Array.isArray(item) &&
-	!(item instanceof FormData) &&
-	!(item instanceof Date) &&
-	!(item instanceof Map) &&
-	!(item instanceof Set)
+	!(
+		item instanceof Date ||
+		item instanceof Map ||
+		item instanceof Set ||
+		item instanceof FormData ||
+		Array.isArray(item)
+	)
 
+// объединяет конфиги с полным копированием
 export const resolveMerge = (
 	target: Record<string, any>,
 	source: Record<string, any>
 ): any => {
-	const output = structuredClone(target)
-	const clonedSource = structuredClone(source)
+	return Object.entries(source).reduce(
+		(acc, [key, sourceValue]) => {
+			let newValue
 
-	for (const key in clonedSource) {
-		if (!Object.prototype.hasOwnProperty.call(clonedSource, key)) continue
+			if (sourceValue instanceof Date) newValue = new Date(sourceValue)
+			else if (sourceValue instanceof Map) newValue = new Map(sourceValue)
+			else if (sourceValue instanceof Set) newValue = new Set(sourceValue)
+			else if (Array.isArray(sourceValue)) newValue = [...sourceValue]
+			else if (isPlainObject(sourceValue)) {
+				const targetValue = isPlainObject(target[key]) ? target[key] : {}
+				newValue = resolveMerge(targetValue, sourceValue)
+			} else newValue = sourceValue
 
-		const sourceValue = clonedSource[key]
-
-		if (sourceValue instanceof FormData) output[key] = sourceValue
-		else if (sourceValue instanceof Date) output[key] = new Date(sourceValue)
-		else if (sourceValue instanceof Map) output[key] = new Map(sourceValue)
-		else if (sourceValue instanceof Set) output[key] = new Set(sourceValue)
-		else if (isObject(sourceValue)) {
-			const targetValue = isObject(output[key]) ? output[key] : {}
-			output[key] = resolveMerge(targetValue, sourceValue)
-		} else output[key] = sourceValue
-	}
-	return output
+			return { ...acc, [key]: newValue }
+		},
+		{ ...target }
+	)
 }
 
+// объединяет baseUrl и url
 export const resolveURL = (baseURL: string | undefined, url: string) => {
 	const finalURL = baseURL ? new URL(url, baseURL).href : url
 	return finalURL.split('?')[0]
 }
 
+// получаем params в string
 export const resolveParams = (params?: EchoSearchParams) => {
 	if (!params) return ''
 
@@ -63,6 +67,7 @@ export const resolveParams = (params?: EchoSearchParams) => {
 	return queryString ? `?${queryString}` : ''
 }
 
+// изменяем body от типа
 export const resolveBody = (body: any): BodyInit | undefined => {
 	if (!body) return
 	return body instanceof FormData || typeof body === 'string'
