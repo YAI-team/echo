@@ -48,10 +48,11 @@ export class Echo extends EchoClient {
 				if (!onRejected) continue
 				try {
 					const result = await onRejected(input)
-					if (result === input) continue
+					if (result === input || result instanceof Error) continue
 
 					input = result
 					isHandled = true
+					break
 				} catch (err) {
 					throw err
 				}

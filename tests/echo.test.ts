@@ -62,13 +62,10 @@ describe('Echo Interceptors', () => {
 
 	test('Перехватчик request при ошибке', async () => {
 		echo.interceptors.request.use('errorRequest', null, async error => {
-			console.log(error)
 			return { data: 'Recovered from error', status: 200 }
 		})
 
-		fetchMock.mockRejectOnce(() =>
-			Promise.reject(new EchoError('Network Error'))
-		)
+		fetchMock.mockRejectOnce(() => Promise.reject(new Error('Network Error')))
 
 		const response = await echo.get('/error')
 		expect(response.status).toBe(200)
@@ -109,7 +106,6 @@ describe('Echo Interceptors', () => {
 
 	test('Перехватчик response при ошибке', async () => {
 		echo.interceptors.response.use('errorResponse', null, async error => {
-			console.log(error)
 			return { data: 'Recovered from error', status: 200 }
 		})
 
