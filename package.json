@@ -8,7 +8,7 @@
 	"license": "MIT",
 	"scripts": {
 		"prebuild": "rimraf dist",
-		"build": "tsc && bun run bundle",
+		"build": "tsc --project tsconfig.build.json && bun run bundle",
 		"bundle": "esbuild dist/index.js --bundle --minify --platform=node --format=cjs --outfile=dist/index.cjs.js && esbuild dist/index.js --bundle --minify --platform=node --format=esm --outfile=dist/index.esm.js",
 		"test": "jest"
 	},

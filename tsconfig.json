@@ -13,5 +13,5 @@
 		"baseUrl": "./"
 	},
 	"include": ["**/*.ts"],
-	"exclude": ["node_modules", "dist", "public", "tests"]
+	"exclude": ["node_modules", "dist", "public"]
 }
