@@ -1,7 +1,7 @@
 <p align="center">
-	<a href="https://github.com/YAI-team/echo/" target="blank">
-		<img src="https://raw.githubusercontent.com/YAI-team/echo/main/public/favicon.svg" width="500" alt="Project Logo" />
-	</a>
+    <a href="https://github.com/YAI-team/echo/" target="blank">
+        <img src="https://raw.githubusercontent.com/YAI-team/echo/main/public/favicon.svg" width="500" alt="Project Logo" />
+    </a>
 </p>
 
 ## Description
@@ -76,7 +76,7 @@ const config: EchoCreateConfig = {
     baseURL: 'http://localhost:4200',
     headers: {
         'Content-Type': 'application/json'
-        },
+    },
     credentials: 'include'
 }
 
