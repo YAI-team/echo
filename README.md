@@ -103,7 +103,7 @@ const echoServer = (
     refreshToken?: string,
     accessToken?: string
 ): EchoClientInstance =>
-    new EchoClient({
+	new EchoClient({
         // Using the previously defined config
         ...config,
         headers: {
