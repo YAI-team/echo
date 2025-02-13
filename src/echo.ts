@@ -57,14 +57,17 @@ export class Echo extends EchoClient {
 			throw input
 		}
 
-		const request = async <T>(config: EchoConfig): Promise<EchoResponse<T>> => {
+		const request = async <T>(
+			configure: EchoConfig
+		): Promise<EchoResponse<T>> => {
 			try {
 				const interceptedRequest = await runFulfilled<EchoConfig>(
 					'request',
-					resolveMerge(createConfig, config)
+					// resolveMerge делает глубокое клонирование
+					resolveMerge(createConfig, configure)
 				)
 
-				const { request } = this.configurator(interceptedRequest)
+				const { request, config } = this.configurator(interceptedRequest)
 				const response = await this.fetch<T>(config, request)
 
 				return await runFulfilled<EchoResponse<T>>('response', response)

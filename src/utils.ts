@@ -36,9 +36,22 @@ export const resolveMerge = (
 }
 
 // объединяет baseUrl и url
-export const resolveURL = (baseURL: string | undefined, url: string) => {
-	const finalURL = baseURL ? new URL(url, baseURL).href : url
-	return finalURL.split('?')[0]
+export const resolveURL = (
+	baseURL: string | undefined,
+	url: string
+): string => {
+	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(url)) {
+		return url
+	}
+
+	if (!baseURL) return url
+
+	const normalizedBaseURL = baseURL.endsWith('/')
+		? baseURL.slice(0, -1)
+		: baseURL
+	const normalizedURL = url.startsWith('/') ? url.slice(1) : url
+
+	return `${normalizedBaseURL}/${normalizedURL}`
 }
 
 // получаем params в string
