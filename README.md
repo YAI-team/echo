@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./public/favicon.svg" width="200" alt="Project Logo" />
+  <img src="./public/favicon.svg" width="500" alt="Project Logo" />
 </p>
 
 ## Description
@@ -281,4 +281,4 @@ If you have any questions, suggestions, or find a bug, contact us at help.yai.te
 
 ## License
 
-This project is distributed under the [MIT](./LICENSE) license.
+This project is distributed under the [MIT license](./LICENSE).
