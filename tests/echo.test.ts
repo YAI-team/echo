@@ -109,8 +109,9 @@ describe('Echo Interceptors', () => {
 			return { data: 'Recovered from error', status: 200 }
 		})
 
+		const errorConfig: any = { method: 'GET', url: '/error' }
 		fetchMock.mockRejectOnce(() =>
-			Promise.reject(new EchoError('Network Error'))
+			Promise.reject(new EchoError('Network Error', errorConfig, errorConfig))
 		)
 
 		const response = await echo.get('/error')
@@ -219,8 +220,9 @@ describe('Echo Interceptors', () => {
 			return { data: 'Should not reach here', status: 200 }
 		})
 
+		const errorConfig: any = { method: 'GET', url: '/error' }
 		fetchMock.mockRejectOnce(() =>
-			Promise.reject(new EchoError('Network Error'))
+			Promise.reject(new EchoError('Network Error', errorConfig, errorConfig))
 		)
 
 		const response = await echo.get('/error')
@@ -248,8 +250,11 @@ describe('Echo Interceptors', () => {
 			return error
 		})
 
+		const errorConfig: any = { method: 'GET', url: '/error' }
 		fetchMock.mockRejectOnce(() =>
-			Promise.reject(new EchoError('Unhandled EchoError'))
+			Promise.reject(
+				new EchoError('Unhandled EchoError', errorConfig, errorConfig)
+			)
 		)
 
 		await expect(echo.get('/unhandled')).rejects.toThrow('Unhandled EchoError')

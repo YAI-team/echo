@@ -246,8 +246,9 @@ describe('EchoClient', () => {
 	})
 
 	test('Обработка ошибок сети', async () => {
+		const errorConfig: any = { method: 'GET', url: '/error' }
 		fetchMock.mockRejectOnce(() =>
-			Promise.reject(new EchoError('Network Error'))
+			Promise.reject(new EchoError('Network Error', errorConfig, errorConfig))
 		)
 		await expect(client.get('/error')).rejects.toThrow(EchoError)
 	})
@@ -263,10 +264,14 @@ describe('EchoClient', () => {
 	})
 
 	test('Обработка тайм-аута', async () => {
+		const errorConfig: any = { method: 'GET', url: '/timeout' }
 		fetchMock.mockImplementation(
 			() =>
 				new Promise((_, reject) =>
-					setTimeout(() => reject(new EchoError('Timeout')), 2000)
+					setTimeout(
+						() => reject(new EchoError('Timeout', errorConfig, errorConfig)),
+						2000
+					)
 				)
 		)
 		await expect(client.get('/timeout')).rejects.toThrow('Timeout')
