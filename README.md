@@ -1,8 +1,8 @@
 # @yai/echo
 
-**@yai/echo** — это лёгкий HTTP-клиент на основе встроенного `fetch`, с удобным синтаксисом, напоминающим [Axios](https://github.com/axios/axios). Библиотека поддерживает перехватчики (interceptors) для запросов и ответов, что облегчает добавление заголовков, обработку ошибок, логирование и другие аспекты работы с сетью.
+**@yai/echo** is a lightweight HTTP client based on the built-in `fetch`, featuring a convenient syntax similar to [Axios](https://github.com/axios/axios). The library supports interceptors for requests and responses, making it easier to add headers, handle errors, log requests, and manage other networking aspects.
 
-## Установка
+## Installation
 
 ```bash
 # using npm
@@ -13,34 +13,37 @@ $ yarn add @yai/echo
 $ bun add @yai/echo
 ```
 
-## Быстрый старт
+## Quick Start
 
-После установки можно сразу использовать дефолтный экземпляр:
+After installation, you can use the default instance immediately:
 
-```bash
+```javascript
 import echo from '@yai/echo'
 
-// Get запрос с then
+// GET request with then
 echo.get('/users')
-    .then(response => {
-        // handle success
-        console.log(response.data)
-    })
-    .catch(function (error) {
-        // handle error
-        console.log(error);
-    })
-    .finally(function () {
-        // always executed
-    });
+	.then(response => {
+		// handle success
+		console.log(response.data)
+	})
+	.catch(function (error) {
+		// handle error
+		console.log(error)
+	})
+	.finally(function () {
+		// always executed
+	})
 
-// Post запрос без then
-const response = await echo.post('/login', { username: 'admin', password: '123456' })
+// POST request without then
+const response = await echo.post('/login', {
+	username: 'admin',
+	password: '123456'
+})
 ```
 
-## Методы запроса
+## Request Methods
 
-Экземпляр (или echo по умолчанию) поддерживает методы:
+The instance (or the default `echo`) supports the following methods:
 
 - `request(config)`
 - `get(url, options?)`
@@ -49,291 +52,229 @@ const response = await echo.post('/login', { username: 'admin', password: '12345
 - `patch(url, body?, options?)`
 - `delete(url, options?)`
 
-Где:
+Where:
 
-- url — строка, указывающая на endpoint (если есть baseURL, то будет к нему добавляться).
-- body — тело запроса для методов, позволяющих передавать данные (POST, PUT, PATCH).
-- options — дополнительная конфигурация (заголовки, responseType, params и т.д.).
+- `url` — A string indicating the endpoint (if `baseURL` is set, it will be prepended).
+- `body` — The request body for methods that allow sending data (POST, PUT, PATCH).
+- `options` — Additional configuration (headers, responseType, params, etc.).
 
-## Создание экземпляра и базовая конфигурация
+## Creating an Instance and Base Configuration
 
-Пример создание экземпляра:
+Example of creating an instance:
 
-```bash
+```javascript
 import echo from '@yai/echo'
 
-// Задаем конфигурацию
+// Define configuration
 const config: EchoCreateConfig = {
-	baseURL: 'http://localhost:4200',
-	headers: {
-		'Content-Type': 'application/json'
-	},
-	credentials: 'include'
+    baseURL: 'http://localhost:4200',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    credentials: 'include'
 }
 
-// Создаём экземпляр Echo
+// Create an Echo instance
 const echoBase = echo.create(config)
 
-// После чего можем использовать echoBase как обычный echo
+// Now you can use `echoBase` just like `echo`
 const response = await echoBase.get('/users')
 ```
 
-Кроме того стоит учесть что в обычном echo не созданном с помощью create нету поддержки перехватчиков.
-Вы так же можете создать минимизированную версию echo, которая по сути является просто оберткой для fetch:
+Note that the default `echo` instance (not created with `create`) does not support interceptors.
 
-```bash
-// Тут берем config созданный выше
+You can also create a minimal version of `echo`, which essentially acts as a simple wrapper around `fetch`:
+
+```javascript
+// Using the previously defined config
 const echoServer = new EchoClient(config)
 ```
 
-Это может пригодиться для запросов в middleware которые обычно не требуют перехватчиков или другой логики:
+This can be useful for middleware requests that usually do not require interceptors or additional logic:
 
-```bash
+```javascript
 const echoServer = (
-	refreshToken?: string,
-	accessToken?: string
+    refreshToken?: string,
+    accessToken?: string
 ): EchoClientInstance =>
-	new EchoClient({
-        // Тут берем config созданный выше
-		...config,
-		headers: {
-			...(refreshToken && { Cookie: REFRESH(refreshToken) }),
-			...(accessToken && { Authorization: BEARER(accessToken) })
-		}
-	})
+    new EchoClient({
+        // Using the previously defined config
+        ...config,
+        headers: {
+            ...(refreshToken && { Cookie: REFRESH(refreshToken) }),
+            ...(accessToken && { Authorization: BEARER(accessToken) })
+        }
+    })
 ```
 
 ## Request Config
 
-Это доступные параметры конфигурации для выполнения запросов:
+These are the available configuration parameters for making requests:
 
-```bash
+```javascript
 {
-    // Предшественник `url`
-    baseURL: 'https://api.example.com'
+    // Predecessor of `url`
+    baseURL: 'https://api.example.com',
 
-    // Это URL сервера, который будет использоваться для запроса
+    // The URL of the server to be used for the request
     url: '/user',
 
-    // Это метод запроса, который будет использоваться при выполнении запроса
+    // The request method to be used
     method: 'get',
 
-    // Объект заголовков
+    // Headers object
     headers: { 'Content-Type': 'application/json' },
 
-    // Это параметры URL, которые будут отправлены вместе с запросом
+    // URL parameters to be sent with the request
     params: { limit: 10 },
 
-    // Возвращаемый тип данных (например, 'json' | 'text' | 'blob' | 'formData' | ...)
-    responseType: json, // по умолчанию
+    // The expected response data type (e.g., 'json' | 'text' | 'blob' | 'formData' | ...)
+    responseType: json, // default
 
-    // И другие поля поддерживаемые fetch.
+    // Other fields supported by fetch.
 }
 ```
 
 ## Response Schema
 
-Ответ на запрос содержит следующую информацию:
+A response object contains the following information:
 
-```bash
+```javascript
 {
-    // Is the response that was provided by the server.
+    // The response data provided by the server.
     data: {},
 
-    // Is the HTTP status code from the server response.
+    // The HTTP status code from the server response.
     status: 200,
 
-    // Is the HTTP status message from the server response.
+    // The HTTP status message from the server response.
     statusText: 'OK',
 
-    // Is the HTTP headers that the server responded with.
+    // The HTTP headers returned by the server.
     headers: {},
 
-    // Это конфигурация заданная пользователем.
+    // The user-defined request configuration.
     config: {},
 
-    // Это конечный экземпляр запроса, может меняться от перехватчиков или механизмов валидации.
+    // The final request instance, which may be modified by interceptors or validation mechanisms.
     request: {}
 }
 ```
 
-При использовании then вы получите следующий ответ:
+When using `then`, you get the following response:
 
-```bash
-echoBase.get('/users')
-    .then(response => {
-        console.log(response.data)
-        console.log(response.status)
-        console.log(response.statusText)
-        console.log(response.headers)
-        console.log(response.config)
-        console.log(response.request)
-    })
+```javascript
+echoBase.get('/users').then(response => {
+	console.log(response.data)
+	console.log(response.status)
+	console.log(response.statusText)
+	console.log(response.headers)
+	console.log(response.config)
+	console.log(response.request)
+})
 ```
 
-## Перехватчики
+## Interceptors
 
-@yai/echo поддерживает два типа перехватчиков:
+@yai/echo supports two types of interceptors:
 
-- request — вызывается до выполнения запроса или при ошибке запроса.
-- response — вызывается после получения ответа или при ошибке ответа.
+- `request` — Called before making the request or in case of a request error.
+- `response` — Called after receiving the response or in case of a response error.
 
-Оба типа перехватчиков могут влиять на дальнейший ход запроса/ответа.
+Both types of interceptors can affect the request/response flow.
 
-## Добавление перехватчика
+### Adding an Interceptor
 
-Перехватчики выполняются в порядке добавления: `request` -- `reject request` -- `response` -- `reject response`.
-Ключи `request` и `response` перехватчиков не конфликтуют, так что вы можете давать им одинаковые названия.
+Interceptors are executed in the following order: `request` → `reject request` → `response` → `reject response`.
+The `request` and `response` keys do not conflict, so you can use the same names for them.
 
-> Если отдать ошибку EchoError в перехватчиках `request` ее отловит `reject response`
+> If an `EchoError` is thrown inside a `request` interceptor, it will be caught by `reject response`.
 
-```bash
+```javascript
 const echoAuth = echo.create({ baseURL: 'https://api.example.com' })
 
-// Добавим перехватчик request.
+// Add a request interceptor
 echoAuth.interceptors.request.use(
-    'auth',
-    config => {
-        // Если вдруг тут возникнет ошибка ее перехватят в reject request.
-
-        // Изменяем заголовки для авторизации.
-        config.headers = {
-            ...config.headers,
-            Authorization: 'Bearer myToken'
-        }
-
-        // Всегда возвращайте результат для других перехватчиков.
-        return config
-    },
-    error => {
-        // Можно перехватить ошибку, связанную с формированием запроса,
-        // В такие ошибки как правило попадает все что не относится к ответу fetch.
-
-        if (isEchoError(error)) {
-            // Всегда будет false
-        }
-
-        // Всегда возвращайте результат для других перехватчиков.
-         // Если возврать не ошибку то другие перехватчики ошибок не будут отрабатывать.
-        return error
-    }
+	'auth',
+	config => {
+		// Modify authorization headers
+		config.headers = {
+			...config.headers,
+			Authorization: 'Bearer myToken'
+		}
+		return config
+	},
+	error => {
+		return error
+	}
 )
 
-// Добавим перехватчик response.
+// Add a response interceptor
 echoAuth.interceptors.response.use(
-    'auth',
-    response => {
-        // Можно модифицировать ответ.
-        console.log('Response data:', response.data)
-
-        // Если вдруг тут возникнет ошибка ее перехватят в response request
-
-        // Всегда возвращайте результат для других перехватчиков.
-        return response
-    },
-    error => {
-        // Можно вернуть свой "фейковый" ответ и считать ошибку обработанной.
-
-        if (isEchoError(error)) {
-            const originalRequest: any = error.request
-
-            if (!originalRequest._isRetry && error.message === 'jwt expired') {
-                // Это мутирует request, будьте аккуратны
-                originalRequest._isRetry = true
-
-                try {
-                    await echoAuth.request(originalRequest)
-                    return error
-                } catch (err) {
-                    // В этом случае ошибка отдастся на самый верх.
-                    // Перехватчики ошибок не обрабатывают ошибки друг друга.
-                    //
-                    throw err
-                }
-            }
-        }
-
-        // Всегда возвращайте результат для других перехватчиков.
-        // Если возврать не ошибку то другие перехватчики ошибок не будут отрабатывать.
-        return error
-    }
+	'auth',
+	response => {
+		console.log('Response data:', response.data)
+		return response
+	},
+	error => {
+		return error
+	}
 )
 ```
 
-Объект config в response рассчитывался как неизменяемый (устанавливается пользователем на входе), не стоит его изменять (это не опасно, но не стоит).
-При необходимости в response изменяйте именно request, после запроса он не влечет полезную нагрузку кроме как логирования (не задумывался таковым).
+## Removing and Clearing Interceptors
 
-## Удаление и очистка перехватчиков
+- `instance.interceptors.request.eject('auth')` — Removes the interceptor with the key 'auth'.
+- `instance.interceptors.request.clear()` — Removes all request interceptors.
 
-- `instance.interceptors.request.eject('auth')` — удалить перехватчик с ключом 'auth'.
-- `instance.interceptors.request.clear()` — удалить все request перехватчики.
+## Error Handling
 
-## Обработка ошибок
+An `EchoError` instance contains:
 
-Экземпляр EchoError содержит:
-
-```bash
+```javascript
 {
-    // Сообщения ошибки
+    // Error message
     message: string,
 
-    // Конфигурацию запроса
+    // Request configuration
     config: EchoConfig,
 
-    // Конечный экземпляр запроса
+    // Final request instance
     request: EchoRequest,
 
-    // Экземпляр ответа
+    // Response instance (if available)
     response?: EchoResponse
 }
 ```
 
-Пример обработки ошибки:
+Example error handling:
 
-```bash
-echo.get('/user/12345')
-    .catch(error => {
-		console.log('Error', error.message)
-		// Конфигурация запроса
-		console.log(error.config)
+```javascript
+echo.get('/user/12345').catch(error => {
+	console.log('Error', error.message)
+	console.log(error.config)
+	console.log(error.request)
 
-		// Конечная конфигурация запроса
-		console.log(error.request)
-
-		// Сервер ответил на запрос с кодом выходящим за 2xx
-		if (error.response) {
-			console.log(error.response.data)
-			console.log(error.response.status)
-			console.log(error.response.headers)
-		}
-	})
+	if (error.response) {
+		console.log(error.response.data)
+		console.log(error.response.status)
+		console.log(error.response.headers)
+	}
+})
 ```
 
-Однако стоит учесть что echo не всегда может обеспечить вывод ошибки в виде EchoError, поскольку вы можете их переопределять в перехватчиках.
+## Using multipart/form-data
 
-Вы так же можете проверять ошибку на EchoError с помощью:
-
-```bash
-echo.get('/user/12345')
-	.catch(error => {
-		if (isEchoError(error)) {
-			// Это по прежнему EchoError
-		}
-	})
-```
-
-## Использование multipart/form-data формата
-
-Для отправки **FormData** вам необязательно использовать заголовки, echo автоматически удалит Content-type после чего fetch подставит нужный заголовок.
+When sending **FormData**, you do not need to set headers manually; `echo` will automatically remove `Content-Type`, allowing `fetch` to apply the appropriate header.
 
 ## TypeScript & ES6
 
-Echo полностью типизирован кроме того он не рассчитан на использование версий ниже JavaScript ES6
+Echo is fully typed and is designed for JavaScript ES6 and higher.
 
-## Вопросы и обратная связь
+## Questions and Feedback
 
-Если у вас возникнут вопросы, пожелания или вы найдёте ошибку, напишите нам на help.yai.team@gmail.com
+If you have any questions, suggestions, or find a bug, contact us at help.yai.team@gmail.com.
 
-## Лицензия
+## License
 
-Проект распространяется под лицензией [MIT](./LICENSE).
+This project is distributed under the [MIT](./LICENSE) license.
