@@ -148,22 +148,22 @@ A response object contains the following information:
 ```javascript
 {
 	// The response data provided by the server.
-    data: {},
+	data: {},
 
-    // The HTTP status code from the server response.
-    status: 200,
+	// The HTTP status code from the server response.
+	status: 200,
 
-    // The HTTP status message from the server response.
-    statusText: 'OK',
-
-    // The HTTP headers returned by the server.
-    headers: {},
-
-    // The user-defined request configuration.
-    config: {},
-
-    // The final request instance, which may be modified by interceptors or validation mechanisms.
-    request: {}
+	// The HTTP status message from the server response.
+	statusText: 'OK',
+	
+	// The HTTP headers returned by the server.
+	headers: {},
+	
+	// The user-defined request configuration.
+	config: {},
+	
+	// The final request instance, which may be modified by interceptors or validation mechanisms.
+	request: {}
 }
 ```
 
@@ -239,17 +239,17 @@ An `EchoError` instance contains:
 
 ```javascript
 {
-    // Error message
-    message: string,
-
-    // Request configuration
-    config: EchoConfig,
-
-    // Final request instance
-    request: EchoRequest,
-
-    // Response instance (if available)
-    response?: EchoResponse
+	// Error message
+	message: string,
+	
+	// Request configuration
+	config: EchoConfig,
+	
+	// Final request instance
+	request: EchoRequest,
+	
+	// Response instance (if available)
+	response?: EchoResponse
 }
 ```
 
