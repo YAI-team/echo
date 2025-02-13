@@ -104,12 +104,14 @@ describe('utils', () => {
 
 	describe('resolveURL', () => {
 		test('Разрешать URL', () => {
-			const baseURL = 'https://example.com'
-			const url = '/api/v1/resource'
+			const baseURL = 'https://example.com/api'
+			const url = '/v1/resource'
 
 			const result = resolveURL(baseURL, url)
+			const result2 = resolveURL(`${baseURL + '/'}`, url)
 
 			expect(result).toBe('https://example.com/api/v1/resource')
+			expect(result2).toBe('https://example.com/api/v1/resource')
 		})
 
 		test('Работать без baseURL', () => {

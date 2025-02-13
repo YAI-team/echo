@@ -41,15 +41,20 @@ export const resolveURL = (
 	url: string
 ): string => {
 	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(url)) {
-		return url
+		return url.split('?')[0]
 	}
 
-	if (!baseURL) return url
+	if (!baseURL) return url.split('?')[0]
+
+	const urlWithoutSearch = url.split('?')[0]
 
 	const normalizedBaseURL = baseURL.endsWith('/')
 		? baseURL.slice(0, -1)
 		: baseURL
-	const normalizedURL = url.startsWith('/') ? url.slice(1) : url
+
+	const normalizedURL = urlWithoutSearch.startsWith('/')
+		? urlWithoutSearch.slice(1)
+		: urlWithoutSearch
 
 	return `${normalizedBaseURL}/${normalizedURL}`
 }
