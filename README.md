@@ -1,6 +1,10 @@
-# @yai/echo
+<p align="center">
+  <img src="./public/favicon.svg" width="200" alt="Project Logo" />
+</p>
 
-**@yai/echo** is a lightweight HTTP client based on the built-in `fetch`, featuring a convenient syntax similar to [Axios](https://github.com/axios/axios). The library supports interceptors for requests and responses, making it easier to add headers, handle errors, log requests, and manage other networking aspects.
+## Description
+
+This is a lightweight HTTP client based on the built-in `fetch`, featuring a convenient syntax similar to [Axios](https://github.com/axios/axios). The library supports interceptors for requests and responses, making it easier to add headers, handle errors, log requests, and manage other networking aspects.
 
 ## Installation
 
