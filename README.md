@@ -28,22 +28,22 @@ import echo from '@yai/echo'
 
 // GET request with then
 echo.get('/users')
-	.then(response => {
-		// handle success
-		console.log(response.data)
-	})
-	.catch(function (error) {
-		// handle error
-		console.log(error)
-	})
-	.finally(function () {
-		// always executed
-	})
+    .then(response => {
+        // handle success
+        console.log(response.data)
+    })
+    .catch(function (error) {
+        // handle error
+        console.log(error)
+    })
+    .finally(function () {
+        // always executed
+    })
 
 // POST request without then
 const response = await echo.post('/login', {
-	username: 'admin',
-	password: '123456'
+    username: 'admin',
+    password: '123456'
 })
 ```
 
@@ -73,11 +73,11 @@ import echo from '@yai/echo'
 
 // Define configuration
 const config: EchoCreateConfig = {
-	baseURL: 'http://localhost:4200',
-	headers: {
-		'Content-Type': 'application/json'
-    	},
-	credentials: 'include'
+    baseURL: 'http://localhost:4200',
+    headers: {
+        'Content-Type': 'application/json'
+        },
+    credentials: 'include'
 }
 
 // Create an Echo instance
@@ -103,7 +103,7 @@ const echoServer = (
     refreshToken?: string,
     accessToken?: string
 ): EchoClientInstance =>
-	new EchoClient({
+    new EchoClient({
         // Using the previously defined config
         ...config,
         headers: {
@@ -121,22 +121,22 @@ These are the available configuration parameters for making requests:
 {
     // Predecessor of `url`
     baseURL: 'https://api.example.com',
-
+    
     // The URL of the server to be used for the request
     url: '/user',
-
+    
     // The request method to be used
     method: 'get',
-
+    
     // Headers object
     headers: { 'Content-Type': 'application/json' },
-
+    
     // URL parameters to be sent with the request
     params: { limit: 10 },
-
+    
     // The expected response data type (e.g., 'json' | 'text' | 'blob' | 'formData' | ...)
     responseType: json, // default
-
+    
     // Other fields supported by fetch.
 }
 ```
@@ -147,23 +147,23 @@ A response object contains the following information:
 
 ```javascript
 {
-	// The response data provided by the server.
-	data: {},
-
-	// The HTTP status code from the server response.
-	status: 200,
-
-	// The HTTP status message from the server response.
-	statusText: 'OK',
-	
-	// The HTTP headers returned by the server.
-	headers: {},
-	
-	// The user-defined request configuration.
-	config: {},
-	
-	// The final request instance, which may be modified by interceptors or validation mechanisms.
-	request: {}
+    // The response data provided by the server.
+    data: {},
+    
+    // The HTTP status code from the server response.
+    status: 200,
+    
+    // The HTTP status message from the server response.
+    statusText: 'OK',
+    
+    // The HTTP headers returned by the server.
+    headers: {},
+    
+    // The user-defined request configuration.
+    config: {},
+    
+    // The final request instance, which may be modified by interceptors or validation mechanisms.
+    request: {}
 }
 ```
 
@@ -171,12 +171,12 @@ When using `then`, you get the following response:
 
 ```javascript
 echoBase.get('/users').then(response => {
-	console.log(response.data)
-	console.log(response.status)
-	console.log(response.statusText)
-	console.log(response.headers)
-	console.log(response.config)
-	console.log(response.request)
+    console.log(response.data)
+    console.log(response.status)
+    console.log(response.statusText)
+    console.log(response.headers)
+    console.log(response.config)
+    console.log(response.request)
 })
 ```
 
@@ -201,30 +201,30 @@ const echoAuth = echo.create({ baseURL: 'https://api.example.com' })
 
 // Add a request interceptor
 echoAuth.interceptors.request.use(
-	'auth',
-	config => {
-		// Modify authorization headers
-		config.headers = {
-			...config.headers,
-			Authorization: 'Bearer myToken'
-		}
-		return config
-	},
-	error => {
-		return error
-	}
+    'auth',
+    config => {
+        // Modify authorization headers
+        config.headers = {
+            ...config.headers,
+            Authorization: 'Bearer myToken'
+        }
+        return config
+    },
+    error => {
+        return error
+    }
 )
 
 // Add a response interceptor
 echoAuth.interceptors.response.use(
-	'auth',
-	response => {
-		console.log('Response data:', response.data)
-		return response
-	},
-	error => {
-		return error
-	}
+    'auth',
+    response => {
+        console.log('Response data:', response.data)
+        return response
+    },
+    error => {
+        return error
+    }
 )
 ```
 
@@ -239,17 +239,17 @@ An `EchoError` instance contains:
 
 ```javascript
 {
-	// Error message
-	message: string,
-	
-	// Request configuration
-	config: EchoConfig,
-	
-	// Final request instance
-	request: EchoRequest,
-	
-	// Response instance (if available)
-	response?: EchoResponse
+    // Error message
+    message: string,
+    
+    // Request configuration
+    config: EchoConfig,
+    
+    // Final request instance
+    request: EchoRequest,
+    
+    // Response instance (if available)
+    response?: EchoResponse
 }
 ```
 
@@ -257,15 +257,15 @@ Example error handling:
 
 ```javascript
 echo.get('/user/12345').catch(error => {
-	console.log('Error', error.message)
-	console.log(error.config)
-	console.log(error.request)
-
-	if (error.response) {
-		console.log(error.response.data)
-		console.log(error.response.status)
-		console.log(error.response.headers)
-	}
+    console.log('Error', error.message)
+    console.log(error.config)
+    console.log(error.request)
+    
+    if (error.response) {
+        console.log(error.response.data)
+        console.log(error.response.status)
+        console.log(error.response.headers)
+    }
 })
 ```
 
