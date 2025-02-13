@@ -42,12 +42,12 @@ const response = await echo.post('/login', { username: 'admin', password: '12345
 
 Экземпляр (или echo по умолчанию) поддерживает методы:
 
-- request(config)
-- get(url, options?)
-- post(url, body?, options?)
-- put(url, body?, options?)
-- patch(url, body?, options?)
-- delete(url, options?)
+- `request(config)`
+- `get(url, options?)`
+- `post(url, body?, options?)`
+- `put(url, body?, options?)`
+- `patch(url, body?, options?)`
+- `delete(url, options?)`
 
 Где:
 
@@ -79,7 +79,6 @@ const response = await echoBase.get('/users')
 ```
 
 Кроме того стоит учесть что в обычном echo не созданном с помощью create нету поддержки перехватчиков.
-
 Вы так же можете создать минимизированную версию echo, которая по сути является просто оберткой для fetch:
 
 ```bash
@@ -138,22 +137,22 @@ const echoServer = (
 
 ```bash
 {
-    // Is the response that was provided by the server
+    // Is the response that was provided by the server.
     data: {},
 
-    // Is the HTTP status code from the server response
+    // Is the HTTP status code from the server response.
     status: 200,
 
-    // Is the HTTP status message from the server response
+    // Is the HTTP status message from the server response.
     statusText: 'OK',
 
-    // Is the HTTP headers that the server responded with
+    // Is the HTTP headers that the server responded with.
     headers: {},
 
-    // Это конфигурация заданная пользователем
+    // Это конфигурация заданная пользователем.
     config: {},
 
-    // Это конечный экземпляр запроса, может меняться от перехватчиков или механизмов валидации
+    // Это конечный экземпляр запроса, может меняться от перехватчиков или механизмов валидации.
     request: {}
 }
 ```
@@ -183,84 +182,91 @@ echoBase.get('/users')
 
 ## Добавление перехватчика
 
-Перехватчики выполняются в порядке добавления: request - reject request - reject response - response
-Ключи request и response перехватчиков не конфликтуют, так что вы можете давать им одинаковые названия.
+Перехватчики выполняются в порядке добавления: `request` -- `reject request` -- `response` -- `reject response`.
+Ключи `request` и `response` перехватчиков не конфликтуют, так что вы можете давать им одинаковые названия.
+
+> Если отдать ошибку EchoError в перехватчиках `request` ее отловит `reject response`
 
 ```bash
 const echoAuth = echo.create({ baseURL: 'https://api.example.com' })
 
-// Добавим перехватчик request
+// Добавим перехватчик request.
 echoAuth.interceptors.request.use(
     'auth',
     config => {
-        // Изменяем заголовки для авторизации
+        // Если вдруг тут возникнет ошибка ее перехватят в reject request.
+
+        // Изменяем заголовки для авторизации.
         config.headers = {
             ...config.headers,
             Authorization: 'Bearer myToken'
         }
 
-        // Всегда возвращайте результат для других перехватчиков
+        // Всегда возвращайте результат для других перехватчиков.
         return config
     },
     error => {
-        // Можно перехватить ошибку, связанную с формированием запроса (например, если config некорректен)
-        // В такие ошибки как правило попадает все что не относится к ожидаемым ошибкам
+        // Можно перехватить ошибку, связанную с формированием запроса,
+        // В такие ошибки как правило попадает все что не относится к ответу fetch.
 
         if (isEchoError(error)) {
             // Всегда будет false
         }
 
-        // Всегда возвращайте результат для других перехватчиков
+        // Всегда возвращайте результат для других перехватчиков.
+         // Если возврать не ошибку то другие перехватчики ошибок не будут отрабатывать.
         return error
     }
 )
 
-// Добавим перехватчик response
+// Добавим перехватчик response.
 echoAuth.interceptors.response.use(
     'auth',
     response => {
-        // Можно модифицировать ответ
+        // Можно модифицировать ответ.
         console.log('Response data:', response.data)
 
-        // Всегда возвращайте результат для других перехватчиков
+        // Если вдруг тут возникнет ошибка ее перехватят в response request
+
+        // Всегда возвращайте результат для других перехватчиков.
         return response
     },
     error => {
-        // Обработка ошибок (например, 403)
-        // Можно вернуть свой "фейковый" ответ и считать ошибку обработанной
-        // Сделать пере-запрос по необходимости или пробросить ошибку дальше
+        // Можно вернуть свой "фейковый" ответ и считать ошибку обработанной.
 
         if (isEchoError(error)) {
             const originalRequest: any = error.request
 
             if (!originalRequest._isRetry && error.message === 'jwt expired') {
+                // Это мутирует request, будьте аккуратны
                 originalRequest._isRetry = true
 
                 try {
                     await echoAuth.request(originalRequest)
                     return error
                 } catch (err) {
-                    // В этом случае ошибка отдастся на самый верх
-                    // перехватчики ошибок не обрабатывают ошибки друг друга
+                    // В этом случае ошибка отдастся на самый верх.
+                    // Перехватчики ошибок не обрабатывают ошибки друг друга.
+                    //
                     throw err
                 }
             }
         }
 
-        // Всегда возвращайте результат для других перехватчиков
+        // Всегда возвращайте результат для других перехватчиков.
+        // Если возврать не ошибку то другие перехватчики ошибок не будут отрабатывать.
         return error
     }
 )
 ```
 
+Объект config в response рассчитывался как неизменяемый (устанавливается пользователем на входе), не стоит его изменять (это не опасно, но не стоит).
+При необходимости в response изменяйте именно request, после запроса он не влечет полезную нагрузку кроме как логирования (не задумывался таковым).
+
 ## Удаление и очистка перехватчиков
 
-- instance.interceptors.request.eject('auth') — удалить перехватчик с ключом 'auth'.
-- instance.interceptors.request.clear() — удалить все request перехватчики.
-
-## Вопросы и обратная связь
-
-Если у вас возникнут вопросы, пожелания или вы найдёте ошибку, напишите нам на help.yai.team@gmail.com
+- `instance.interceptors.request.eject('auth')` — удалить перехватчик с ключом 'auth'.
+- `instance.interceptors.request.clear()` — удалить все request перехватчики.
 
 ## Обработка ошибок
 
@@ -311,7 +317,7 @@ echo.get('/user/12345')
 echo.get('/user/12345')
 	.catch(error => {
 		if (isEchoError(error)) {
-			// Структуру ошибки не изменили
+			// Это по прежнему EchoError
 		}
 	})
 ```
@@ -323,6 +329,10 @@ echo.get('/user/12345')
 ## TypeScript & ES6
 
 Echo полностью типизирован кроме того он не рассчитан на использование версий ниже JavaScript ES6
+
+## Вопросы и обратная связь
+
+Если у вас возникнут вопросы, пожелания или вы найдёте ошибку, напишите нам на help.yai.team@gmail.com
 
 ## Лицензия
 

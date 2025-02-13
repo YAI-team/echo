@@ -26,11 +26,7 @@ export class Echo extends EchoClient {
 
 			for (const [_, { onFulfilled }] of interceptors) {
 				if (!onFulfilled) continue
-				try {
-					input = (await onFulfilled(input as any)) as T
-				} catch (err) {
-					throw err
-				}
+				input = (await onFulfilled(input as any)) as T
 			}
 			return input
 		}
@@ -74,7 +70,6 @@ export class Echo extends EchoClient {
 				return await runFulfilled<EchoResponse<T>>('response', response)
 			} catch (error) {
 				if (!isEchoError(error)) return await runRejected('request', error)
-
 				return await runRejected('response', error)
 			}
 		}
