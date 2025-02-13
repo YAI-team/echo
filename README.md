@@ -76,7 +76,7 @@ const config: EchoCreateConfig = {
 	baseURL: 'http://localhost:4200',
 	headers: {
 		'Content-Type': 'application/json'
-    },
+    	},
 	credentials: 'include'
 }
 
