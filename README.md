@@ -100,7 +100,7 @@ This can be useful for middleware requests that usually do not require intercept
 
 ```javascript
 const echoServer = (
-	refreshToken?: string,
+    refreshToken?: string,
     accessToken?: string
 ): EchoClientInstance =>
 	new EchoClient({
