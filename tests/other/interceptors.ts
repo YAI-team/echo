@@ -5,15 +5,15 @@ import { isEchoError } from '../../src/error'
 import { BEARER, getAccessToken } from './other'
 
 export const setupEchoAuthInterceptors = (echoAuth: EchoInstance) => {
-	echoAuth.interceptors.request.use('auth', value => {
+	echoAuth.interceptors.request.use('auth', config => {
 		const accessToken = getAccessToken()
 		if (accessToken)
-			value.headers = {
-				...value.headers,
+			config.headers = {
+				...config.headers,
 				Authorization: BEARER(accessToken)
 			}
 
-		return value
+		return config
 	})
 
 	echoAuth.interceptors.response.use('auth', null, async error => {

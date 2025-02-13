@@ -5,7 +5,12 @@
 ## Установка
 
 ```bash
-npm install @yai/echo
+# using npm
+$ npm install @yai/echo
+# or using yarn
+$ yarn add @yai/echo
+# or using bun
+$ bun add @yai/echo
 ```
 
 ## Быстрый старт
@@ -15,6 +20,7 @@ npm install @yai/echo
 ```bash
 import echo from '@yai/echo'
 
+// Get запрос с then
 echo.get('/users')
     .then(response => {
         // handle success
@@ -27,9 +33,31 @@ echo.get('/users')
     .finally(function () {
         // always executed
     });
+
+// Post запрос без then
+const response = await echo.post('/login', { username: 'admin', password: '123456' })
 ```
 
+## Методы запроса
+
+Экземпляр (или echo по умолчанию) поддерживает методы:
+
+- request(config)
+- get(url, options?)
+- post(url, body?, options?)
+- put(url, body?, options?)
+- patch(url, body?, options?)
+- delete(url, options?)
+
+Где:
+
+- url — строка, указывающая на endpoint (если есть baseURL, то будет к нему добавляться).
+- body — тело запроса для методов, позволяющих передавать данные (POST, PUT, PATCH).
+- options — дополнительная конфигурация (заголовки, responseType, params и т.д.).
+
 ## Создание экземпляра и базовая конфигурация
+
+Пример создание экземпляра:
 
 ```bash
 import echo from '@yai/echo'
@@ -46,23 +74,43 @@ const config: EchoCreateConfig = {
 // Создаём экземпляр Echo
 const echoBase = echo.create(config)
 
-// Выполняем GET-запрос
-customEcho.get('/users').then(response => {
-    console.log(response.data)
-})
-
 // После чего можем использовать echoBase как обычный echo
-
 const response = await echoBase.get('/users')
 ```
 
-## Параметры конфигурации
+Кроме того стоит учесть что в обычном echo не созданном с помощью create нету поддержки перехватчиков.
 
-При создании экземпляра можно указать:
+Вы так же можете создать минимизированную версию echo, которая по сути является просто оберткой для fetch:
+
+```bash
+// Тут берем config созданный выше
+const echoServer = new EchoClient(config)
+```
+
+Это может пригодиться для запросов в middleware которые обычно не требуют перехватчиков или другой логики:
+
+```bash
+const echoServer = (
+	refreshToken?: string,
+	accessToken?: string
+): EchoClientInstance =>
+	new EchoClient({
+        // Тут берем config созданный выше
+		...config,
+		headers: {
+			...(refreshToken && { Cookie: REFRESH(refreshToken) }),
+			...(accessToken && { Authorization: BEARER(accessToken) })
+		}
+	})
+```
+
+## Request Config
+
+Это доступные параметры конфигурации для выполнения запросов:
 
 ```bash
 {
-    // предшественник `url`, если `url` не является абсолютным
+    // Предшественник `url`
     baseURL: 'https://api.example.com'
 
     // Это URL сервера, который будет использоваться для запроса
@@ -84,27 +132,44 @@ const response = await echoBase.get('/users')
 }
 ```
 
-## Методы запроса
+## Response Schema
 
-Экземпляр (или echo по умолчанию) поддерживает методы:
-
-- request(config)
-- get(url, options?)
-- post(url, body?, options?)
-- put(url, body?, options?)
-- patch(url, body?, options?)
-- delete(url, options?)
-
-Где:
-
-- url — строка, указывающая на endpoint (если есть baseURL, то будет к нему добавляться).
-- body — тело запроса для методов, позволяющих передавать данные (POST, PUT, PATCH).
-- options — дополнительная конфигурация (заголовки, responseType, params и т.д.).
-
-## Пример POST-запроса с телом:
+Ответ на запрос содержит следующую информацию:
 
 ```bash
-const response = await echoBase.post('/login', { username: 'admin', password: '123456' })
+{
+    // Is the response that was provided by the server
+    data: {},
+
+    // Is the HTTP status code from the server response
+    status: 200,
+
+    // Is the HTTP status message from the server response
+    statusText: 'OK',
+
+    // Is the HTTP headers that the server responded with
+    headers: {},
+
+    // Это конфигурация заданная пользователем
+    config: {},
+
+    // Это конечный экземпляр запроса, может меняться от перехватчиков или механизмов валидации
+    request: {}
+}
+```
+
+При использовании then вы получите следующий ответ:
+
+```bash
+echoBase.get('/users')
+    .then(response => {
+        console.log(response.data)
+        console.log(response.status)
+        console.log(response.statusText)
+        console.log(response.headers)
+        console.log(response.config)
+        console.log(response.request)
+    })
 ```
 
 ## Перехватчики
@@ -118,7 +183,8 @@ const response = await echoBase.post('/login', { username: 'admin', password: '1
 
 ## Добавление перехватчика
 
-Ключи request и response перехватчиков не конфликтуют, так что вы можете давать им одинаковые названия
+Перехватчики выполняются в порядке добавления: request - reject request - reject response - response
+Ключи request и response перехватчиков не конфликтуют, так что вы можете давать им одинаковые названия.
 
 ```bash
 const echoAuth = echo.create({ baseURL: 'https://api.example.com' })
@@ -132,15 +198,19 @@ echoAuth.interceptors.request.use(
             ...config.headers,
             Authorization: 'Bearer myToken'
         }
+
+        // Всегда возвращайте результат для других перехватчиков
         return config
     },
     error => {
         // Можно перехватить ошибку, связанную с формированием запроса (например, если config некорректен)
-        // В такие ошибки как правило попадает все что не относится к EchoError, то есть вызываемые до ожидаемых результатов
+        // В такие ошибки как правило попадает все что не относится к ожидаемым ошибкам
 
         if (isEchoError(error)) {
             // Всегда будет false
         }
+
+        // Всегда возвращайте результат для других перехватчиков
         return error
     }
 )
@@ -151,30 +221,35 @@ echoAuth.interceptors.response.use(
     response => {
         // Можно модифицировать ответ
         console.log('Response data:', response.data)
+
+        // Всегда возвращайте результат для других перехватчиков
         return response
     },
     error => {
-    // Обработка ошибок (например, 403)
-    // Можно вернуть свой "фейковый" ответ и считать ошибку обработанной
-    // Сделать пере-запрос по необходимости или пробросить ошибку дальше
+        // Обработка ошибок (например, 403)
+        // Можно вернуть свой "фейковый" ответ и считать ошибку обработанной
+        // Сделать пере-запрос по необходимости или пробросить ошибку дальше
 
-    if (isEchoError(error)) {
-        const originalRequest: any = error.request
+        if (isEchoError(error)) {
+            const originalRequest: any = error.request
 
-        if (!originalRequest._isRetry && error.message === 'jwt expired') {
-            originalRequest._isRetry = true
+            if (!originalRequest._isRetry && error.message === 'jwt expired') {
+                originalRequest._isRetry = true
 
-            try {
-                await echoAuth.request(originalRequest)
-                return error
-            } catch (err) {
-                // В этом случае ошибка отдастся на самый верх, перехватчики не обрабатывают ошибки друг друга
-                throw err
+                try {
+                    await echoAuth.request(originalRequest)
+                    return error
+                } catch (err) {
+                    // В этом случае ошибка отдастся на самый верх
+                    // перехватчики ошибок не обрабатывают ошибки друг друга
+                    throw err
+                }
             }
         }
+
+        // Всегда возвращайте результат для других перехватчиков
+        return error
     }
-    return error
-  }
 )
 ```
 
@@ -185,8 +260,70 @@ echoAuth.interceptors.response.use(
 
 ## Вопросы и обратная связь
 
-Если у вас возникнут вопросы, пожелания или вы найдёте ошибку, напишите нам на help.yai.team@gmail.com. Будем рады вашему вкладу в виде pull request!
+Если у вас возникнут вопросы, пожелания или вы найдёте ошибку, напишите нам на help.yai.team@gmail.com
+
+## Обработка ошибок
+
+Экземпляр EchoError содержит:
+
+```bash
+{
+    // Сообщения ошибки
+    message: string,
+
+    // Конфигурацию запроса
+    config: EchoConfig,
+
+    // Конечный экземпляр запроса
+    request: EchoRequest,
+
+    // Экземпляр ответа
+    response?: EchoResponse
+}
+```
+
+Пример обработки ошибки:
+
+```bash
+echo.get('/user/12345')
+    .catch(error => {
+		console.log('Error', error.message)
+		// Конфигурация запроса
+		console.log(error.config)
+
+		// Конечная конфигурация запроса
+		console.log(error.request)
+
+		// Сервер ответил на запрос с кодом выходящим за 2xx
+		if (error.response) {
+			console.log(error.response.data)
+			console.log(error.response.status)
+			console.log(error.response.headers)
+		}
+	})
+```
+
+Однако стоит учесть что echo не всегда может обеспечить вывод ошибки в виде EchoError, поскольку вы можете их переопределять в перехватчиках.
+
+Вы так же можете проверять ошибку на EchoError с помощью:
+
+```bash
+echo.get('/user/12345')
+	.catch(error => {
+		if (isEchoError(error)) {
+			// Структуру ошибки не изменили
+		}
+	})
+```
+
+## Использование multipart/form-data формата
+
+Для отправки **FormData** вам необязательно использовать заголовки, echo автоматически удалит Content-type после чего fetch подставит нужный заголовок.
+
+## TypeScript & ES6
+
+Echo полностью типизирован кроме того он не рассчитан на использование версий ниже JavaScript ES6
 
 ## Лицензия
 
-Проект распространяется под лицензией [MIT].
+Проект распространяется под лицензией [MIT](./LICENSE).
