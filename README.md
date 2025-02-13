@@ -73,11 +73,11 @@ import echo from '@yai/echo'
 
 // Define configuration
 const config: EchoCreateConfig = {
-    baseURL: 'http://localhost:4200',
-    headers: {
-        'Content-Type': 'application/json'
+	baseURL: 'http://localhost:4200',
+	headers: {
+		'Content-Type': 'application/json'
     },
-    credentials: 'include'
+	credentials: 'include'
 }
 
 // Create an Echo instance
@@ -100,7 +100,7 @@ This can be useful for middleware requests that usually do not require intercept
 
 ```javascript
 const echoServer = (
-    refreshToken?: string,
+	refreshToken?: string,
     accessToken?: string
 ): EchoClientInstance =>
 	new EchoClient({
@@ -147,7 +147,7 @@ A response object contains the following information:
 
 ```javascript
 {
-    // The response data provided by the server.
+	// The response data provided by the server.
     data: {},
 
     // The HTTP status code from the server response.
