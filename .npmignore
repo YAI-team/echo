@@ -7,3 +7,4 @@ tests
 bun.lock
 bun.lockb
 tsconfig.json
+tsconfig.build.json

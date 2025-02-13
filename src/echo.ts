@@ -10,6 +10,8 @@ import {
 } from './types'
 import { resolveMerge } from './utils'
 
+export type EchoInstance = ReturnType<Echo['create']>
+
 export class Echo extends EchoClient {
 	create(createConfig: EchoCreateConfig = {}) {
 		const requestInterceptors: EchoRequestInterceptors = new Map()

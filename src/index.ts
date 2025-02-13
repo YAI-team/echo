@@ -1,10 +1,10 @@
-import { Echo } from './echo'
+import { EchoClient, EchoClientInstance } from './client'
+import { Echo, EchoInstance } from './echo'
 
-export * from './client'
 export * from './error'
 export * from './types'
 
-export type EchoInstance = ReturnType<Echo['create']>
+export { Echo, EchoClient, EchoClientInstance, EchoInstance }
 
 const echo = new Echo()
 export default echo
