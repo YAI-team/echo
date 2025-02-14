@@ -10,16 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node:version: [22.12]
+        node-version: [22.12]
     steps:
       - uses: actions/checkout@v3
+
       - name: Starting Node.js ${{ matrix.node-version }}
-        uses: actions:setup-node@v3
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Install Bun 1.2.2
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.2
+
       - name: install modules
-        run: npm install
+        run: bun install
+
       - name: build project
-        run: npm run build
+        run: bun run build
+
       - name: unit tests
-        run: npm run test:unit
+        run: bun run test:unit
