@@ -10,7 +10,7 @@
 		"prebuild": "rimraf dist",
 		"build": "tsc --project tsconfig.build.json && bun run bundle",
 		"bundle": "esbuild dist/index.js --bundle --minify --platform=node --format=cjs --outfile=dist/index.cjs.js && esbuild dist/index.js --bundle --minify --platform=node --format=esm --outfile=dist/index.esm.js",
-		"test": "jest"
+		"test:unit": "jest"
 	},
 	"main": "dist/index.cjs.js",
 	"module": "dist/index.esm.js",
