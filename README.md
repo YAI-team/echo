@@ -281,10 +281,6 @@ When sending **FormData**, you do not need to set headers manually; `echo` will 
 
 Echo is fully typed and is designed for JavaScript ES6 and higher.
 
-## Questions and Feedback
-
-If you have any questions, suggestions, or find a bug, contact us at help.yai.team@gmail.com.
-
 ## License
 
 This project is distributed under the [MIT license](./LICENSE).
