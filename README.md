@@ -4,6 +4,10 @@
     </a>
 </p>
 
+<p align="center">An HTTP client built on fetch, offering an Axios-like experience with support for interceptors.</p>
+
+<h1 align="center">Echo</h1>
+
 ## Description
 
 This is a lightweight HTTP client based on the built-in `fetch`, featuring a convenient syntax similar to [Axios](https://github.com/axios/axios). The library supports interceptors for requests and responses, making it easier to add headers, handle errors, log requests, and manage other networking aspects.
