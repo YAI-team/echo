@@ -4,6 +4,7 @@ src
 tests
 .git
 .prettierrc
+.github
 bun.lock
 bun.lockb
 tsconfig.json
