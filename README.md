@@ -6,7 +6,14 @@
 
 <p align="center">An HTTP client built on fetch, offering an Axios-like experience with support for interceptors.</p>
 
-<h1 align="center">Echo</h1>
+<p align="center">
+    <a href="https://github.com/YAI-team/Echo" target="_blank"><img src="https://img.shields.io/badge/GitHub-Repo-blue?logo=github" alt="GitHub Repo" /></a>
+    <a href="https://www.npmjs.com/package/@yai-team/echo" target="_blank"><img src="https://img.shields.io/npm/v/@yai-team/echo?color=red&logo=npm" alt="npm Package" /></a>
+    <a href="https://www.npmjs.com/package/@yai-team/echo" target="_blank"><img src="https://img.shields.io/npm/dw/@yai-team/echo?color=orange&logo=npm" alt="npm Downloads" /></a>
+    <a href="https://bundlephobia.com/package/@yai-team/echo" target="_blank"><img src="https://img.shields.io/bundlephobia/minzip/@yai-team/echo?color=purple&logo=webpack" alt="Bundle Size" /></a>
+    <a href="https://github.com/YAI-team/Echo/blob/main/LICENSE" target="_blank"><img src="https://img.shields.io/github/license/YAI-team/Echo?color=green" alt="License" /></a>
+    <a href="https://github.com/YAI-team/Echo/actions" target="_blank"><img src="https://img.shields.io/github/actions/workflow/status/YAI-team/Echo/tests.yaml?branch=main&logo=githubactions" alt="Build Status" /></a>
+</p>
 
 ## Description
 
