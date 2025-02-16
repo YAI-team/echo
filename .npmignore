@@ -1,6 +1,7 @@
 .git
 .github
 node_modules
+coverage
 public
 src
 tests
@@ -10,5 +11,8 @@ bun.lock
 bun.lockb
 tsconfig.json
 tsconfig.build.json
+dist/*.js
 dist/*.map
-dist/!(index*)
+!dist/index.cjs.js
+!dist/index.esm.js
+!dist/*.d.ts

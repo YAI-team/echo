@@ -3,10 +3,11 @@
 	"compilerOptions": {
 		"rootDir": "src",
 		"outDir": "dist",
+		"noEmit": false,
 		"declaration": true,
-		"declarationMap": false,
 		"removeComments": true,
 		"stripInternal": true
 	},
-	"include": ["src/index.ts"]
+	"include": ["src/index.ts"],
+	"exclude": ["node_modules", "dist", "tests"]
 }
