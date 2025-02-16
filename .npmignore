@@ -1,11 +1,14 @@
+.git
+.github
 node_modules
 public
 src
 tests
-.git
+.gitignore
 .prettierrc
-.github
 bun.lock
 bun.lockb
 tsconfig.json
 tsconfig.build.json
+dist/*.map
+dist/!(index*)

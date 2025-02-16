@@ -8,9 +8,9 @@
 		"module": "ESNext",
 		"moduleResolution": "node",
 		"resolveJsonModule": true,
-		"declaration": true,
-		"outDir": "./dist",
-		"baseUrl": "./"
+		"baseUrl": "./",
+		"noEmit": true,
+		"isolatedModules": true
 	},
 	"include": ["**/*.ts"],
 	"exclude": ["node_modules", "dist", "public"]
